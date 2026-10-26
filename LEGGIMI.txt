@@ -14,7 +14,7 @@ INSTALLARE SULL'IPAD
 3. Apri l'app dall'icona almeno una volta con la connessione attiva: da quel momento funziona anche offline.
 
 AGGIORNARE
-Se modifichi i file, cambia il numero in sw.js (riga CACHE = 'studio-funzione-v1' -> 'v2')
+Se modifichi i file, cambia il numero in sw.js (riga CACHE = 'studio-funzione-v3' -> 'v2')
 prima di ricaricarli, altrimenti l'iPad continua a mostrare la versione vecchia.
 
 NOTE
