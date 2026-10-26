@@ -1,0 +1,2537 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3f96">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Studio funzione">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+body{margin:0;font:14px system-ui,-apple-system,sans-serif}
+img{max-width:100%}[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+</style>
+<title>Studio di funzione con calcoli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: quaderno a quadretti — grafico a sinistra (fisso su schermi larghi), passi dello studio a destra; su telefono una colonna. */
+:root {
+  --bg: #f3f4f0;
+  --sheet: #fdfdfb;
+  --text: #23262d;
+  --muted: #5b6471;
+  --rule: #d9dee4;
+  --grid: #e1e8f0;
+  --grid-major: #c3d1e0;
+  --axis: #3b4250;
+  --ink: #1f3f96;
+  --ink-soft: #e6ecfa;
+  --red: #c0342a;
+  --red-soft: #fbe9e7;
+  --d1: #24785a;
+  --d2: #a8650a;
+  --font-math: "STIX Two Text", "Cambria Math", "Times New Roman", serif;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101318; --sheet: #161a21; --text: #e5e8ed; --muted: #9aa3b1; --rule: #29303b;
+    --grid: #1e2530; --grid-major: #2c3747; --axis: #b9c1cd; --ink: #93b4ff; --ink-soft: #1c2740;
+    --red: #ff7d70; --red-soft: #3a1f1d; --d1: #5fcf9a; --d2: #f0a84a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101318; --sheet: #161a21; --text: #e5e8ed; --muted: #9aa3b1; --rule: #29303b;
+  --grid: #1e2530; --grid-major: #2c3747; --axis: #b9c1cd; --ink: #93b4ff; --ink-soft: #1c2740;
+  --red: #ff7d70; --red-soft: #3a1f1d; --d1: #5fcf9a; --d2: #f0a84a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 18px; }
+header.top { display: grid; gap: 12px; }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand h1 { margin: 0; font-family: var(--font-math); font-weight: 600; font-size: 1.55rem; letter-spacing: 0.005em; }
+.brand h1 i { color: var(--ink); }
+.brand p { margin: 0; color: var(--muted); font-size: 0.85rem; }
+
+.entry { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; display: grid; gap: 10px; }
+.entry-row { display: flex; gap: 10px; align-items: center; }
+.entry label { font-family: var(--font-math); font-style: italic; font-size: 1.35rem; white-space: nowrap; color: var(--text); }
+.entry input {
+  flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 1.05rem; padding: 10px 12px; border-radius: 8px;
+  border: 1.5px solid var(--grid-major); background: var(--bg); color: var(--text);
+}
+.entry input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px var(--ink-soft); }
+button { font: inherit; cursor: pointer; }
+.go { background: var(--ink); color: var(--sheet); border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 600; white-space: nowrap; }
+.go:focus-visible, .key:focus-visible, .chip:focus-visible, .tool:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.keys { display: flex; flex-wrap: wrap; gap: 6px; }
+.key { font-family: var(--font-math); font-size: 1rem; min-width: 40px; padding: 5px 9px; border-radius: 6px; border: 1px solid var(--rule); background: var(--bg); color: var(--text); }
+.key:hover { border-color: var(--grid-major); }
+.examples { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.examples span { font-size: 0.78rem; color: var(--muted); align-self: center; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.06em; }
+.chip { font-family: var(--font-mono); font-size: 0.82rem; white-space: nowrap; padding: 4px 10px; border-radius: 999px; border: 1px dashed var(--grid-major); background: transparent; color: var(--ink); }
+.chip:hover { background: var(--ink-soft); }
+.err { color: var(--red); background: var(--red-soft); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; }
+
+.main { display: grid; gap: 18px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 980px) {
+  .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+  .plot-card { position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); }
+}
+.plot-card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; min-width: 0; }
+.plot-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+.fx { font-family: var(--font-math); font-size: 1.15rem; overflow-x: auto; min-width: 0; max-width: 100%; padding-block: 4px; }
+.plot-wrap { position: relative; height: clamp(300px, 58vh, 560px); }
+canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; cursor: grab; }
+canvas:active { cursor: grabbing; }
+.readout { position: absolute; left: 10px; bottom: 10px; font-family: var(--font-mono); font-size: 0.78rem; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 3px 8px; color: var(--muted); pointer-events: none; }
+.tools { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.tool { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--rule); background: var(--sheet); color: var(--text); font-size: 1.05rem; display: grid; place-items: center; }
+.toggles { display: flex; gap: 14px; flex-wrap: wrap; padding: 10px 12px; border-top: 1px solid var(--rule); font-size: 0.85rem; color: var(--muted); }
+.toggles label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.sw { display: inline-block; width: 18px; height: 0; border-top: 2.5px solid; vertical-align: middle; }
+.sw.f { border-color: var(--ink); } .sw.d1 { border-color: var(--d1); border-top-style: dashed; } .sw.d2 { border-color: var(--d2); border-top-style: dotted; } .sw.as { border-color: var(--red); border-top-style: dashed; }
+
+.steps { display: grid; gap: 12px; min-width: 0; }
+.step { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.step h2 { margin: 0 0 8px; display: flex; gap: 10px; align-items: baseline; font-family: var(--font-math); font-size: 1.18rem; font-weight: 600; text-wrap: balance; }
+.step h2 .n { font-family: var(--font-mono); font-size: 0.8rem; color: var(--red); border: 1.5px solid var(--red); border-radius: 50%; width: 24px; height: 24px; display: inline-grid; place-items: center; flex: none; transform: translateY(-2px); }
+.m { font-family: var(--font-math); font-size: 1.08rem; }
+.big { font-family: var(--font-math); font-size: 1.2rem; overflow-x: auto; padding-block: 2px; }
+.note { color: var(--muted); font-size: 0.85rem; margin: 6px 0 0; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 6px 0; align-items: baseline; }
+.kv dt { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.kv dd { margin: 0; font-family: var(--font-math); font-size: 1.05rem; min-width: 0; overflow-wrap: anywhere; }
+ul.list { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; }
+ul.list li { font-family: var(--font-math); font-size: 1.05rem; }
+.tag { font-family: var(--font-ui); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 7px; border-radius: 4px; background: var(--ink-soft); color: var(--ink); margin-left: 6px; vertical-align: 2px; }
+.tag.r { background: var(--red-soft); color: var(--red); }
+.lim { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; vertical-align: -0.55em; margin-right: 3px; }
+.lim small { font-size: 0.68em; margin-top: 2px; white-space: nowrap; }
+
+/* frazioni e radicali */
+.fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 2px; line-height: 1.15; }
+.fr > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px 1px; }
+.fr > span:last-child { padding: 1px 3px 0; }
+.rad { white-space: nowrap; }
+.rc { border-top: 1px solid currentColor; padding: 0 2px; margin-left: 1px; }
+sup { font-size: 0.7em; line-height: 0; }
+sup .rc { border-top-width: 0.8px; }
+
+/* grafico dei segni */
+.chart { overflow-x: auto; margin: 10px 0 4px; padding: 0 22px 2px; }
+.cg { display: grid; min-width: 100%; }
+.cg > div { position: relative; }
+.lab { height: 22px; }
+.lab .bl, .lab .br { position: absolute; bottom: 2px; font-family: var(--font-math); font-size: 0.92rem; white-space: nowrap; transform: translateX(-50%); }
+.lab .bl { left: 0; } .lab .br { left: 100%; }
+.sg { height: 34px; display: grid; place-items: center; border-left: 1px dotted var(--grid-major); font-family: var(--font-math); font-size: 1.1rem; font-weight: 600; }
+.sg.last { border-right: 1px dotted var(--grid-major); }
+.sg::after { content: ""; position: absolute; left: 0; right: 0; bottom: 8px; border-top: 2px solid; }
+.sg.p { color: var(--ink); } .sg.p::after { border-color: var(--ink); }
+.sg.m { color: var(--red); } .sg.m::after { border-color: var(--red); border-top-style: dashed; }
+.sg.z { color: var(--muted); } .sg.z::after { border-color: var(--muted); }
+.sg.o { background: repeating-linear-gradient(135deg, transparent 0 6px, var(--grid) 6px 7px); color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+.sg.o::after { display: none; }
+.mk { position: absolute; left: 0; bottom: 3px; transform: translateX(-50%); font-family: var(--font-math); font-size: 0.82rem; background: var(--sheet); padding: 0 2px; z-index: 1; line-height: 1.1; }
+.mk.r { left: 100%; }
+.mk.nd { color: var(--red); }
+.bh { height: 30px; display: grid; place-items: center; font-size: 1.25rem; color: var(--text); border-left: 1px dotted var(--grid-major); }
+.bh.last { border-right: 1px dotted var(--grid-major); }
+.bh .pl { position: absolute; left: 0; top: 4px; transform: translateX(-50%); font-family: var(--font-ui); font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--red); background: var(--sheet); padding: 0 3px; }
+.legend { color: var(--muted); font-size: 0.78rem; display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+
+details.how { color: var(--muted); font-size: 0.86rem; background: transparent; border: 1px dashed var(--grid-major); border-radius: 10px; padding: 10px 14px; }
+details.how summary { cursor: pointer; color: var(--text); font-weight: 500; }
+details.how p { margin: 8px 0 0; max-width: 68ch; }
+@media (prefers-reduced-motion: no-preference) { .step { animation: rise .35s ease both; } @keyframes rise { from { transform: translateY(4px); } to { transform: none; } } }
+
+.calc { margin-top: 12px; border-top: 1px dashed var(--grid-major); padding-top: 8px; }
+.calc > summary { cursor: pointer; font-size: 0.76rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); list-style: none; }
+.calc > summary::-webkit-details-marker { display: none; }
+.calc > summary::before { content: "▸ "; } .calc[open] > summary::before { content: "▾ "; }
+.cb { display: grid; gap: 2px; margin: 8px 0; padding: 8px 10px 8px 12px; border-left: 3px solid var(--grid-major); background: var(--bg); border-radius: 0 6px 6px 0; min-width: 0; }
+.cl { font-family: var(--font-math); font-size: 1.04rem; line-height: 1.75; min-width: 0; overflow-x: auto; overflow-y: hidden; }
+.cl b { font-weight: 600; }
+.cl.hd { font-family: var(--font-ui); font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+.cl.nt { color: var(--muted); font-size: 0.93rem; font-style: italic; }
+.cl.sub { padding-left: 14px; }
+.cl.sub2 { padding-left: 28px; font-size: 0.97rem; }
+.cl .lim small { margin-top: 1px; }
+.stbl { display: grid; min-width: 100%; }
+.stbl > div { position: relative; }
+.rl { display: flex; align-items: center; justify-content: flex-end; gap: 4px; padding-right: 10px; min-height: 34px; font-size: 0.98rem; border-right: 1px solid var(--rule); white-space: nowrap; }
+.rl.h { min-height: 22px; border-right: 0; }
+.rl small { font-family: var(--font-ui); font-size: 0.62rem; color: var(--muted); }
+.rl.res, .sg.res { border-top: 1.5px solid var(--axis); }
+.cl .chart { margin: 4px 0; }
+.switch { display: inline-flex; gap: 8px; align-items: center; font-size: 0.85rem; color: var(--muted); cursor: pointer; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Studio di funzione <i>con calcoli</i></h1>
+      <label class="switch"><input type="checkbox" id="t-calc" checked> Mostra i calcoli</label>
+    </div>
+    <form class="entry" id="form" autocomplete="off">
+      <div class="entry-row">
+        <label for="fn">f(x) =</label>
+        <input id="fn" name="fn" spellcheck="false" autocapitalize="off" value="(x^2 - 3)/(x - 2)" aria-label="Funzione da studiare">
+        <button class="go" type="submit">Studia</button>
+      </div>
+      <div class="keys" id="keys" aria-label="Tasti rapidi"></div>
+      <div class="examples" id="examples"><span>Esempi</span></div>
+      <div class="err" id="err" hidden></div>
+    </form>
+  </header>
+
+  <div class="main">
+    <section class="plot-card" aria-label="Grafico">
+      <div class="plot-head"><div class="fx" id="fx"></div></div>
+      <div class="plot-wrap">
+        <canvas id="cv" aria-label="Grafico della funzione"></canvas>
+        <div class="tools">
+          <button class="tool" type="button" id="zin" aria-label="Ingrandisci">+</button>
+          <button class="tool" type="button" id="zout" aria-label="Riduci">−</button>
+          <button class="tool" type="button" id="zfit" aria-label="Adatta la vista">⤢</button>
+        </div>
+        <div class="readout" id="ro">trascina per spostare · rotella o pizzico per lo zoom</div>
+      </div>
+      <div class="toggles">
+        <label><span class="sw f"></span><i class="m">f</i></label>
+        <label><input type="checkbox" id="t-d1"> <span class="sw d1"></span><i class="m">f ′</i></label>
+        <label><input type="checkbox" id="t-d2"> <span class="sw d2"></span><i class="m">f ″</i></label>
+        <label><input type="checkbox" id="t-as" checked> <span class="sw as"></span>asintoti</label>
+        <label><input type="checkbox" id="t-pt" checked> punti notevoli</label>
+      </div>
+    </section>
+
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <details class="how">
+    <summary>Come lavora l’app e dove può sbagliare</summary>
+    <p>Le derivate sono calcolate in forma simbolica e semplificate. Zeri, punti critici, limiti e asintoti sono invece trovati numericamente cercando nell’intervallo da −60 a 60, poi l’app prova a riconoscere il valore esatto (interi, frazioni, radici quadrate, multipli di π, potenze di <i>e</i>, logaritmi). Quando non ci riesce mostra il valore con il simbolo ≈.</p>
+    <p>Può sfuggire uno zero doppio molto vicino a un altro, un fenomeno che avviene oltre ±60 o un limite che converge molto lentamente. Le derivate mostrate sono corrette ma non sempre nella forma più compatta del libro di testo. Per un compito usala come controllo, non al posto dei passaggi.</p>
+    <p>Sintassi: <code>^</code> potenza, <code>sqrt</code> o √ radice quadrata, <code>cbrt</code> radice cubica, <code>ln</code> e <code>log</code> logaritmo naturale, <code>log10</code> in base 10, <code>log(x, 2)</code> in base 2, <code>sen</code>/<code>sin</code>, <code>cos</code>, <code>tg</code>, <code>arctg</code>, <code>|x|</code> valore assoluto, <code>e^(2x)</code> esponenziale (con le parentesi). Si possono usare la virgola decimale e la moltiplicazione implicita (<code>2x</code>, <code>x(x−1)</code>).</p>
+  </details>
+</div>
+
+<script>
+/* ===== Studio di funzione — motore di calcolo (parser, derivate simboliche, analisi numerica) ===== */
+const Studio = (() => {
+  'use strict';
+  // ---------- AST ----------
+  const N = v => ({ t: 'num', v });
+  const X = { t: 'x' };
+  const E = { t: 'const', n: 'e' };
+  const PI = { t: 'const', n: 'pi' };
+  const Add = ts => ({ t: 'add', ts });
+  const Mul = fs => ({ t: 'mul', fs });
+  const Div = (a, b) => ({ t: 'div', a, b });
+  const Pow = (a, b) => ({ t: 'pow', a, b });
+  const Fn = (n, a) => ({ t: 'fn', n, a });
+  const neg = a => Mul([N(-1), a]);
+
+  class UserError extends Error {}
+  const fail = m => { throw new UserError(m); };
+
+  // ---------- Tokenizer ----------
+  const FNS = {
+    sin: 'sin', sen: 'sin', cos: 'cos', tan: 'tan', tg: 'tan', cot: 'cot', cotg: 'cot', ctg: 'cot',
+    asin: 'asin', arcsin: 'asin', arcsen: 'asin', acos: 'acos', arccos: 'acos',
+    atan: 'atan', arctan: 'atan', arctg: 'atan', sqrt: 'sqrt', rad: 'sqrt', cbrt: 'cbrt',
+    abs: 'abs', ln: 'ln', log: 'ln', log10: 'log10', exp: 'exp'
+  };
+  const NAMES = Object.keys(FNS).concat(['pi', 'x', 'e']).sort((a, b) => b.length - a.length);
+
+  function tokenize(src) {
+    let s = src.trim().replace(/^\s*(f\s*\(\s*x\s*\)|y)\s*=\s*/i, '');
+    s = s.replace(/[−–—]/g, '-').replace(/[·×∙⋅]/g, '*').replace(/[÷:]/g, '/')
+      .replace(/²/g, '^2').replace(/³/g, '^3').replace(/π/g, 'pi');
+    const toks = [];
+    let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if (/\s/.test(c)) { i++; continue; }
+      let m;
+      if ((m = /^(\d+(?:[.,]\d+)?|[.,]\d+)/.exec(s.slice(i)))) {
+        toks.push({ k: 'num', v: parseFloat(m[1].replace(',', '.')) }); i += m[1].length; continue;
+      }
+      if (c === '√') { toks.push({ k: 'fn', n: 'sqrt' }); i++; continue; }
+      if (c === '∛') { toks.push({ k: 'fn', n: 'cbrt' }); i++; continue; }
+      if ((m = /^(log10|[a-zA-Z]+)/.exec(s.slice(i)))) {
+        let w = m[1].toLowerCase(); i += m[1].length;
+        if (w === 'log10') { toks.push({ k: 'fn', n: 'log10' }); continue; }
+        while (w.length) {
+          const name = NAMES.find(n => w.startsWith(n));
+          if (!name) fail(`Non conosco «${m[1]}». Usa x come variabile e funzioni come ln, sen, cos, sqrt.`);
+          if (name === 'x') toks.push({ k: 'x' });
+          else if (name === 'pi') toks.push({ k: 'const', n: 'pi' });
+          else if (name === 'e') toks.push({ k: 'const', n: 'e' });
+          else toks.push({ k: 'fn', n: FNS[name] });
+          w = w.slice(name.length);
+        }
+        continue;
+      }
+      if ('+-*/^(),|'.includes(c)) { toks.push({ k: 'op', v: c }); i++; continue; }
+      if (c === '[' || c === '{') { toks.push({ k: 'op', v: '(' }); i++; continue; }
+      if (c === ']' || c === '}') { toks.push({ k: 'op', v: ')' }); i++; continue; }
+      fail(`Carattere non riconosciuto: «${c}»`);
+    }
+    return toks;
+  }
+
+  // ---------- Parser ----------
+  function parse(src) {
+    const toks = tokenize(src);
+    if (!toks.length) fail('Scrivi una funzione, per esempio (x^2 - 3)/(x - 2).');
+    let i = 0, absDepth = 0;
+    const peek = () => toks[i];
+    const isOp = (t, v) => t && t.k === 'op' && t.v === v;
+    const expect = v => { if (!isOp(toks[i], v)) fail(v === ')' ? 'Manca una parentesi chiusa «)».' : `Manca «${v}».`); i++; };
+    const startsPrimary = t => !!t && (t.k === 'num' || t.k === 'fn' || t.k === 'x' || t.k === 'const' || isOp(t, '(') || (isOp(t, '|') && absDepth === 0));
+    function expr() {
+      const terms = [term()];
+      while (isOp(peek(), '+') || isOp(peek(), '-')) { const o = toks[i++].v; const t = term(); terms.push(o === '-' ? neg(t) : t); }
+      return terms.length === 1 ? terms[0] : Add(terms);
+    }
+    function term() {
+      let node = unary();
+      for (;;) {
+        const t = peek();
+        if (isOp(t, '*')) { i++; node = Mul([node, unary()]); }
+        else if (isOp(t, '/')) { i++; node = Div(node, unary()); }
+        else if (startsPrimary(t)) node = Mul([node, power()]);
+        else break;
+      }
+      return node;
+    }
+    function unary() {
+      if (isOp(peek(), '-')) { i++; return neg(unary()); }
+      if (isOp(peek(), '+')) { i++; return unary(); }
+      return power();
+    }
+    function power() {
+      const b = primary();
+      if (isOp(peek(), '^')) { i++; return Pow(b, unary()); }
+      return b;
+    }
+    function primary() {
+      const t = toks[i++];
+      if (!t) fail('L’espressione è incompleta.');
+      if (t.k === 'num') return N(t.v);
+      if (t.k === 'x') return X;
+      if (t.k === 'const') return t.n === 'e' ? E : PI;
+      if (isOp(t, '(')) { const save = absDepth; absDepth = 0; const e = expr(); absDepth = save; expect(')'); return e; }
+      if (isOp(t, '|')) { absDepth++; const e = expr(); absDepth--; expect('|'); return Fn('abs', e); }
+      if (t.k === 'fn') {
+        let ex = null;
+        if (isOp(peek(), '^')) { i++; ex = primary(); }
+        let arg;
+        if (isOp(peek(), '(')) {
+          i++; const save = absDepth; absDepth = 0;
+          arg = expr();
+          if (isOp(peek(), ',')) {
+            i++; const base = expr(); absDepth = save; expect(')');
+            if (t.n !== 'ln') fail('Solo log accetta la base come secondo argomento: log(x, 2).');
+            const r = Div(Fn('ln', arg), Fn('ln', base));
+            return ex ? Pow(r, ex) : r;
+          }
+          absDepth = save; expect(')');
+        } else {
+          if (!peek()) fail(`Manca l’argomento della funzione ${t.n}.`);
+          arg = power();
+        }
+        const r = t.n === 'exp' ? Pow(E, arg) : Fn(t.n, arg);
+        return ex ? Pow(r, ex) : r;
+      }
+      if (isOp(t, ')')) fail('C’è una parentesi chiusa di troppo.');
+      fail(`Simbolo inatteso: «${t.v || t.n}».`);
+    }
+    const tree = expr();
+    if (i < toks.length) fail(isOp(toks[i], ')') ? 'C’è una parentesi chiusa di troppo.' : 'Non riesco a leggere la parte finale dell’espressione.');
+    return tree;
+  }
+
+  // ---------- Utilità sull’albero ----------
+  function hasX(n) {
+    switch (n.t) {
+      case 'x': return true;
+      case 'num': case 'const': case 'raw': return false;
+      case 'add': return n.ts.some(hasX);
+      case 'mul': return n.fs.some(hasX);
+      case 'div': case 'pow': return hasX(n.a) || hasX(n.b);
+      case 'fn': return hasX(n.a);
+    }
+  }
+  function key(n) {
+    switch (n.t) {
+      case 'num': return 'n' + n.v;
+      case 'x': return 'x';
+      case 'const': return 'c' + n.n;
+      case 'raw': return 'r' + n.s;
+      case 'add': return 'A(' + n.ts.map(key).join(',') + ')';
+      case 'mul': return 'M(' + n.fs.map(key).join(',') + ')';
+      case 'div': return 'D(' + key(n.a) + ',' + key(n.b) + ')';
+      case 'pow': return 'P(' + key(n.a) + ',' + key(n.b) + ')';
+      case 'fn': return 'F' + n.n + '(' + key(n.a) + ')';
+    }
+  }
+  const isNum = (n, v) => n.t === 'num' && (v === undefined || Math.abs(n.v - v) < 1e-15);
+  const isInt = v => Math.abs(v - Math.round(v)) < 1e-12;
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+
+  // ---------- Polinomi ----------
+  function toPoly(n) {
+    switch (n.t) {
+      case 'num': return [n.v];
+      case 'x': return [0, 1];
+      case 'const': case 'fn': return null;
+      case 'add': {
+        let r = [0];
+        for (const t of n.ts) { const p = toPoly(t); if (!p) return null; r = pAdd(r, p); }
+        return r;
+      }
+      case 'mul': {
+        let r = [1];
+        for (const f of n.fs) { const p = toPoly(f); if (!p) return null; r = pMul(r, p); if (r.length > 14) return null; }
+        return r;
+      }
+      case 'pow': {
+        if (n.b.t !== 'num' || !isInt(n.b.v) || n.b.v < 0 || n.b.v > 12) return null;
+        const b = toPoly(n.a); if (!b) return null;
+        let r = [1]; for (let k = 0; k < n.b.v; k++) { r = pMul(r, b); if (r.length > 14) return null; }
+        return r;
+      }
+      case 'div': {
+        if (n.b.t !== 'num' || n.b.v === 0) return null;
+        const a = toPoly(n.a); return a ? a.map(c => c / n.b.v) : null;
+      }
+    }
+  }
+  const pAdd = (a, b) => { const r = []; for (let i = 0; i < Math.max(a.length, b.length); i++) r.push((a[i] || 0) + (b[i] || 0)); return r; };
+  const pMul = (a, b) => { const r = new Array(a.length + b.length - 1).fill(0); a.forEach((x, i) => b.forEach((y, j) => { r[i + j] += x * y; })); return r; };
+  function pClean(p) {
+    const s = Math.max(1, ...p.map(Math.abs));
+    p = p.map(c => (Math.abs(c) < 1e-11 * s ? 0 : (Math.abs(c - Math.round(c)) < 1e-9 * Math.max(1, Math.abs(c)) ? Math.round(c) : c)));
+    while (p.length > 1 && p[p.length - 1] === 0) p.pop();
+    return p;
+  }
+  function pDiv(n, d) {
+    n = pClean(n.slice()); d = pClean(d.slice());
+    if (d.length < 2 || n.length < d.length) return null;
+    const q = new Array(n.length - d.length + 1).fill(0), r = n.slice();
+    for (let k = n.length - d.length; k >= 0; k--) {
+      const c = r[k + d.length - 1] / d[d.length - 1]; q[k] = c;
+      for (let j = 0; j < d.length; j++) r[k + j] -= c * d[j];
+    }
+    const s = Math.max(1, ...n.map(Math.abs));
+    return r.every(c => Math.abs(c) < 1e-9 * s) ? pClean(q) : null;
+  }
+  function fromPoly(p) {
+    p = pClean(p);
+    const terms = [];
+    for (let k = p.length - 1; k >= 0; k--) {
+      const c = p[k]; if (c === 0) continue;
+      if (k === 0) { terms.push(N(c)); continue; }
+      const base = k === 1 ? X : Pow(X, N(k));
+      terms.push(c === 1 ? base : Mul([N(c), base]));
+    }
+    if (!terms.length) return N(0);
+    return terms.length === 1 ? terms[0] : Add(terms);
+  }
+  const isPolyNonConst = n => { const p = toPoly(n); return p && pClean(p).length > 1 ? p : null; };
+
+  // ---------- Semplificazione ----------
+  const FN_EVAL = {
+    sin: Math.sin, cos: Math.cos, tan: Math.tan, cot: t => Math.cos(t) / Math.sin(t),
+    asin: Math.asin, acos: Math.acos, atan: Math.atan, sqrt: Math.sqrt, cbrt: Math.cbrt,
+    abs: Math.abs, ln: Math.log, log10: Math.log10
+  };
+  function S(n) {
+    switch (n.t) {
+      case 'num': case 'x': case 'const': case 'raw': return n;
+      case 'fn': return sFn(n.n, S(n.a));
+      case 'pow': return sPow(S(n.a), S(n.b));
+      case 'mul': return sMul(n.fs.map(S));
+      case 'add': return sAdd(n.ts.map(S));
+      case 'div': return sDiv(S(n.a), S(n.b));
+    }
+  }
+  function sFn(name, a) {
+    if (a.t === 'num') { const r = FN_EVAL[name](a.v); if (isFinite(r) && isInt(r)) return N(Math.round(r)); }
+    if (name === 'ln' && a.t === 'const' && a.n === 'e') return N(1);
+    if (name === 'ln' && a.t === 'pow' && a.a.t === 'const' && a.a.n === 'e') return a.b;
+    if (name === 'abs' && a.t === 'num') return N(Math.abs(a.v));
+    return Fn(name, a);
+  }
+  function sPow(a, b) {
+    if (b.t === 'div' && b.a.t === 'num' && b.b.t === 'num') b = N(b.a.v / b.b.v);
+    if (isNum(b, 0)) return N(1);
+    if (isNum(b, 1)) return a;
+    if (isNum(a, 1)) return N(1);
+    if (isNum(a, 0) && b.t === 'num' && b.v > 0) return N(0);
+    if (a.t === 'num' && b.t === 'num') {
+      const r = Math.pow(a.v, b.v);
+      if (isInt(b.v) && b.v > 0 && isInt(r) && Math.abs(r) < 1e9) return N(Math.round(r));
+    }
+    if (b.t === 'num' && b.v < 0) return sDiv(N(1), sPow(a, N(-b.v)));
+    if (a.t === 'pow' && a.b.t === 'num' && b.t === 'num' && isInt(b.v)) return sPow(a.a, N(a.b.v * b.v));
+    if (a.t === 'mul' && b.t === 'num' && isInt(b.v)) return sMul(a.fs.map(f => sPow(f, b)));
+    if (a.t === 'div' && b.t === 'num' && isInt(b.v)) return sDiv(sPow(a.a, b), sPow(a.b, b));
+    if (a.t === 'fn' && a.n === 'sqrt' && b.t === 'num' && isInt(b.v) && b.v % 2 === 0) return sPow(a.a, N(b.v / 2));
+    if (a.t === 'fn' && a.n === 'cbrt' && b.t === 'num' && isInt(b.v) && b.v % 3 === 0) return sPow(a.a, N(b.v / 3));
+    if (a.t === 'fn' && a.n === 'cbrt' && b.t === 'num' && isInt(b.v) && b.v > 0) return Fn('cbrt', sPow(a.a, b));
+    if (a.t === 'fn' && a.n === 'abs' && b.t === 'num' && isInt(b.v) && b.v % 2 === 0) return sPow(a.a, b);
+    return Pow(a, b);
+  }
+  function rank(f) {
+    if (f.t === 'const') return 1;
+    if (f.t === 'x' || (f.t === 'pow' && f.a.t === 'x')) return 2;
+    if (f.t === 'pow' && f.a.t === 'const') return 4;
+    if (f.t === 'fn' || (f.t === 'pow' && f.a.t === 'fn')) return 5;
+    if (f.t === 'add' || (f.t === 'pow' && f.a.t === 'add')) return 3;
+    return 6;
+  }
+  function factorize(n) {
+    // ritorna {c, m: Map(key -> {base, e(node)})}
+    const out = { c: 1, m: new Map() };
+    const fs = n.t === 'mul' ? n.fs : [n];
+    for (const f of fs) {
+      if (f.t === 'num') { out.c *= f.v; continue; }
+      let base = f, e = N(1);
+      if (f.t === 'pow' && f.a.t !== 'num' && f.b.t === 'num') { base = f.a; e = f.b; }
+      const k = key(base);
+      const cur = out.m.get(k);
+      if (cur) cur.e = sAdd([cur.e, e]); else out.m.set(k, { base, e });
+    }
+    return out;
+  }
+  function buildMul(c, entries) {
+    // entries: [{base, e}] con esponenti già semplificati, nessuna divisione
+    const fs = [];
+    for (const { base, e } of entries) {
+      if (isNum(e, 0)) continue;
+      const p = sPow(base, e);
+      if (p.t === 'num') c *= p.v; else if (p.t === 'mul') p.fs.forEach(q => (q.t === 'num' ? (c *= q.v) : fs.push(q))); else fs.push(p);
+    }
+    if (c === 0) return N(0);
+    fs.sort((a, b) => rank(a) - rank(b) || (key(a) < key(b) ? -1 : 1));
+    if (!fs.length) return N(c);
+    if (c === 1 && fs.length === 1) return fs[0];
+    return Mul(c === 1 ? fs : [N(c), ...fs]);
+  }
+  function sMul(fs) {
+    const flat = [];
+    for (const f of fs) { if (f.t === 'mul') flat.push(...f.fs); else flat.push(f); }
+    if (flat.some(f => isNum(f, 0))) return N(0);
+    if (flat.some(f => f.t === 'div')) {
+      const nums = [], dens = [];
+      for (const f of flat) { if (f.t === 'div') { nums.push(f.a); dens.push(f.b); } else nums.push(f); }
+      return sDiv(sMul(nums), sMul(dens));
+    }
+    const fz = factorize(Mul(flat));
+    const pos = [], negs = [];
+    for (const ent of fz.m.values()) {
+      if (ent.e.t === 'num' && ent.e.v < 0) negs.push({ base: ent.base, e: N(-ent.e.v) }); else pos.push(ent);
+    }
+    if (negs.length) return sDiv(buildMul(fz.c, pos), buildMul(1, negs));
+    return buildMul(fz.c, pos);
+  }
+  function splitCoef(t) {
+    if (t.t === 'num') return { c: t.v, rest: null };
+    if (t.t === 'mul' && t.fs[0].t === 'num') {
+      const rest = t.fs.slice(1);
+      return { c: t.fs[0].v, rest: rest.length === 1 ? rest[0] : Mul(rest) };
+    }
+    if (t.t === 'div') {
+      const s = splitCoef(t.a);
+      if (s.c !== 1 && s.rest) return { c: s.c, rest: Div(s.rest, t.b) };
+    }
+    return { c: 1, rest: t };
+  }
+  function commonFactor(terms) {
+    // fattore comune non numerico di tutti i termini
+    const fz = terms.map(factorize);
+    const common = [];
+    for (const [k, ent] of fz[0].m) {
+      if (ent.e.t !== 'num' || ent.e.v <= 0) continue;
+      let e = ent.e.v;
+      for (let i = 1; i < fz.length; i++) {
+        const o = fz[i].m.get(k);
+        if (!o || o.e.t !== 'num' || o.e.v <= 0) { e = 0; break; }
+        e = Math.min(e, o.e.v);
+      }
+      if (e > 0) common.push({ k, base: ent.base, e });
+    }
+    if (!common.length) return null;
+    const rests = fz.map(f => {
+      for (const c of common) { const o = f.m.get(c.k); o.e = N(o.e.v - c.e); }
+      return buildMul(f.c, [...f.m.values()]);
+    });
+    return { common: common.map(c => ({ base: c.base, e: N(c.e) })), rests };
+  }
+  function sAdd(ts) {
+    const flat = [];
+    const push = (t, c) => {
+      if (t.t === 'add') { t.ts.forEach(u => push(u, c)); return; }
+      if (t.t === 'mul') {
+        const adds = t.fs.filter(f => f.t === 'add');
+        if (adds.length === 1 && adds[0].ts.length <= 8) {
+          const others = t.fs.filter(f => f !== adds[0]);
+          adds[0].ts.forEach(u => push(sMul([...others, u]), c));
+          return;
+        }
+      }
+      flat.push(c === 1 ? t : sMul([N(c), t]));
+    };
+    ts.forEach(t => push(t, 1));
+    if (flat.some(t => t.t === 'div')) {
+      // denominatore comune (m.c.m. dei fattori)
+      const lcd = new Map();
+      const dz = flat.map(t => (t.t === 'div' ? factorize(t.b) : { c: 1, m: new Map() }));
+      let lc = 1;
+      dz.forEach(d => {
+        if (isInt(d.c) && d.c !== 0) lc = lc * Math.abs(d.c) / gcd(lc, Math.abs(d.c));
+        for (const [k, ent] of d.m) {
+          const ev = ent.e.t === 'num' ? ent.e.v : null;
+          const cur = lcd.get(k);
+          if (!cur) lcd.set(k, { base: ent.base, e: ent.e });
+          else if (ev !== null && cur.e.t === 'num' && ev > cur.e.v) cur.e = ent.e;
+        }
+      });
+      const nums = flat.map((t, i) => {
+        const d = dz[i];
+        const mult = [];
+        for (const [k, ent] of lcd) {
+          const own = d.m.get(k);
+          if (!own) mult.push({ base: ent.base, e: ent.e });
+          else if (ent.e.t === 'num' && own.e.t === 'num' && ent.e.v > own.e.v) mult.push({ base: ent.base, e: N(ent.e.v - own.e.v) });
+        }
+        const cm = isInt(d.c) && d.c !== 0 ? lc / d.c : 1 / (d.c || 1);
+        const num = t.t === 'div' ? t.a : t;
+        return sMul([buildMul(cm, mult), num]);
+      });
+      return sDiv(sAdd(nums), buildMul(lc, [...lcd.values()]));
+    }
+    const poly = toPoly(Add(flat));
+    if (poly) return fromPoly(poly);
+    const m = new Map(); let k0 = 0;
+    for (const t of flat) {
+      const { c, rest } = splitCoef(t);
+      if (!rest) { k0 += c; continue; }
+      const k = key(rest);
+      const cur = m.get(k);
+      if (cur) cur.c += c; else m.set(k, { c, rest });
+    }
+    const out = [];
+    for (const { c, rest } of m.values()) {
+      if (Math.abs(c) < 1e-14) continue;
+      out.push(c === 1 ? rest : sMul([N(c), rest]));
+    }
+    if (Math.abs(k0) > 1e-14) out.push(N(k0));
+    if (!out.length) return N(0);
+    if (out.length === 1) return out[0];
+    if (!out.some(t => t.t === 'num')) {
+      const cf = commonFactor(out);
+      if (cf) {
+        const inner = sAdd(cf.rests);
+        return sMul([buildMul(1, cf.common), inner]);
+      }
+    }
+    return Add(out);
+  }
+  function sDiv(a, b) {
+    if (isNum(b, 1)) return a;
+    if (isNum(a, 0)) return N(0);
+    if (isNum(b, -1)) return sMul([N(-1), a]);
+    if (a.t === 'div') return sDiv(a.a, sMul([a.b, b]));
+    if (b.t === 'div') return sDiv(sMul([a, b.b]), b.a);
+    if (a.t === 'num' && b.t === 'num') {
+      if (isInt(a.v) && isInt(b.v)) {
+        let p = Math.round(a.v), q = Math.round(b.v); const g = gcd(p, q) || 1; p /= g; q /= g;
+        if (q < 0) { p = -p; q = -q; }
+        return q === 1 ? N(p) : Div(N(p), N(q));
+      }
+      return N(a.v / b.v);
+    }
+    const fa = factorize(a), fb = factorize(b);
+    // cancellazione di fattori uguali con esponente numerico
+    for (const [k, eb] of fb.m) {
+      const ea = fa.m.get(k);
+      if (!ea || ea.e.t !== 'num' || eb.e.t !== 'num') continue;
+      const d = ea.e.v - eb.e.v;
+      if (d >= 0) { ea.e = N(d); eb.e = N(0); } else { ea.e = N(0); eb.e = N(-d); }
+    }
+    let ca = fa.c, cb = fb.c;
+    if (isInt(ca) && isInt(cb)) { const g = gcd(Math.round(ca), Math.round(cb)) || 1; ca /= g; cb /= g; }
+    else if (cb !== 1 && cb !== 0) { ca /= cb; cb = 1; }
+    if (cb < 0) { ca = -ca; cb = -cb; }
+    const numEntries = [...fa.m.values()];
+    const denEntries = [...fb.m.values()].filter(e => !isNum(e.e, 0));
+    // divisione tra polinomi (semplifica i fattori comuni)
+    let numNode = buildMul(ca, numEntries);
+    const polyDens = denEntries.filter(de => de.e.t === 'num' && isInt(de.e.v) && isPolyNonConst(de.base));
+    if (polyDens.length) {
+      let np = toPoly(numNode);
+      if (np) {
+        let changed = false;
+        for (const de of polyDens) {
+          const pp = toPoly(de.base);
+          while (de.e.v > 0) { const q = pDiv(np, pp); if (!q) break; np = q; de.e = N(de.e.v - 1); changed = true; }
+        }
+        if (changed) {
+          if (cb !== 1 && isInt(cb) && np.every(isInt)) {
+            const g = np.reduce((acc, c) => gcd(acc, Math.round(c)), Math.round(cb));
+            if (g > 1) { np = np.map(c => c / g); cb /= g; }
+          }
+          numNode = fromPoly(np);
+        }
+      } else {
+        let changed = false;
+        for (const ne of numEntries) {
+          if (!(ne.e.t === 'num' && ne.e.v === 1)) continue;
+          let np2 = isPolyNonConst(ne.base); if (!np2) continue;
+          for (const de of polyDens) {
+            const pp = toPoly(de.base);
+            while (de.e.v > 0) { const q = pDiv(np2, pp); if (!q) break; np2 = q; de.e = N(de.e.v - 1); changed = true; }
+          }
+          ne.base = fromPoly(np2);
+        }
+        if (changed) numNode = sMul([N(ca), ...numEntries.map(e => sPow(e.base, e.e))]);
+      }
+    }
+    if (isNum(numNode, 0)) return N(0);
+    const den = buildMul(cb, denEntries.filter(e => !isNum(e.e, 0)));
+    if (isNum(den, 1)) return numNode;
+    if (den.t === 'num' && numNode.t === 'num') return sDiv(numNode, den);
+    return Div(numNode, den);
+  }
+
+  // ---------- Derivata ----------
+  function D(n) {
+    switch (n.t) {
+      case 'num': case 'const': return N(0);
+      case 'x': return N(1);
+      case 'add': return Add(n.ts.map(D));
+      case 'mul': {
+        const ts = [];
+        n.fs.forEach((f, i) => { if (hasX(f)) ts.push(Mul(n.fs.map((g, j) => (j === i ? D(g) : g)))); });
+        return ts.length ? Add(ts) : N(0);
+      }
+      case 'div': {
+        if (!hasX(n.b)) return Div(D(n.a), n.b);
+        if (!hasX(n.a)) return Div(Mul([N(-1), n.a, D(n.b)]), Pow(n.b, N(2)));
+        return Div(Add([Mul([D(n.a), n.b]), Mul([N(-1), n.a, D(n.b)])]), Pow(n.b, N(2)));
+      }
+      case 'pow': {
+        const { a, b } = n;
+        if (!hasX(b)) return Mul([b, Pow(a, Add([b, N(-1)])), D(a)]);
+        if (!hasX(a)) return Mul([n, a.t === 'const' && a.n === 'e' ? N(1) : Fn('ln', a), D(b)]);
+        return Mul([n, Add([Mul([D(b), Fn('ln', a)]), Div(Mul([b, D(a)]), a)])]);
+      }
+      case 'fn': {
+        const u = n.a, du = D(u);
+        const one_u2 = Add([N(1), Mul([N(-1), Pow(u, N(2))])]);
+        let d;
+        switch (n.n) {
+          case 'sin': d = Fn('cos', u); break;
+          case 'cos': d = Mul([N(-1), Fn('sin', u)]); break;
+          case 'tan': d = Div(N(1), Pow(Fn('cos', u), N(2))); break;
+          case 'cot': d = Div(N(-1), Pow(Fn('sin', u), N(2))); break;
+          case 'asin': d = Div(N(1), Fn('sqrt', one_u2)); break;
+          case 'acos': d = Div(N(-1), Fn('sqrt', one_u2)); break;
+          case 'atan': d = Div(N(1), Add([N(1), Pow(u, N(2))])); break;
+          case 'sqrt': d = Div(N(1), Mul([N(2), Fn('sqrt', u)])); break;
+          case 'cbrt': d = Div(N(1), Mul([N(3), Pow(Fn('cbrt', u), N(2))])); break;
+          case 'abs': d = Div(Fn('abs', u), u); break;
+          case 'ln': d = Div(N(1), u); break;
+          case 'log10': d = Div(N(1), Mul([u, Fn('ln', N(10))])); break;
+        }
+        return Mul([d, du]);
+      }
+    }
+  }
+
+  // ---------- Compilazione numerica ----------
+  function C(n) {
+    switch (n.t) {
+      case 'num': { const v = n.v; return () => v; }
+      case 'x': return x => x;
+      case 'const': { const v = n.n === 'e' ? Math.E : Math.PI; return () => v; }
+      case 'raw': { const v = n.v; return () => v; }
+      case 'add': { const fs = n.ts.map(C); return x => { let s = 0; for (const f of fs) s += f(x); return s; }; }
+      case 'mul': { const fs = n.fs.map(C); return x => { let s = 1; for (const f of fs) s *= f(x); return s; }; }
+      case 'div': { const a = C(n.a), b = C(n.b); return x => a(x) / b(x); }
+      case 'pow': {
+        const a = C(n.a);
+        if (n.a.t === 'const' && n.a.n === 'e') { const b = C(n.b); return x => Math.exp(b(x)); }
+        if (n.b.t === 'num') { const k = n.b.v; return x => Math.pow(a(x), k); }
+        if (n.b.t === 'div' && n.b.a.t === 'num' && n.b.b.t === 'num') { const k = n.b.a.v / n.b.b.v; return x => Math.pow(a(x), k); }
+        const b = C(n.b); return x => Math.pow(a(x), b(x));
+      }
+      case 'fn': { const a = C(n.a), f = FN_EVAL[n.n]; return x => f(a(x)); }
+    }
+  }
+
+  // ---------- Stampa HTML ----------
+  const FN_NAME = { sin: 'sen', cos: 'cos', tan: 'tg', cot: 'cotg', asin: 'arcsen', acos: 'arccos', atan: 'arctg', ln: 'ln', log10: 'log' };
+  const frac = (n, d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+  const paren = s => `(${s})`;
+  function fmtDec(a, digits = 3) {
+    let s = a.toFixed(digits);
+    if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return s.replace('.', ',');
+  }
+  function numHTML(v, sup) {
+    if (isInt(v)) return String(Math.round(v));
+    for (let d = 2; d <= 100; d++) {
+      const p = Math.round(v * d);
+      if (Math.abs(v * d - p) < 1e-9 * d && gcd(p, d) === 1) return sup ? `${p}/${d}` : frac(p, d);
+    }
+    return fmtDec(v, 4);
+  }
+  function coefOf(n) { if (n.t === 'num') return n.v; if (n.t === 'mul') return n.fs.reduce((c, f) => (f.t === 'num' ? c * f.v : c), 1); if (n.t === 'div') return coefOf(n.a); return 1; }
+  const isNegN = n => coefOf(n) < 0;
+  function negate(n) {
+    if (n.t === 'num') return N(-n.v);
+    if (n.t === 'mul') {
+      const c = -coefOf(n); const fs = n.fs.filter(f => f.t !== 'num');
+      if (c === 1) return fs.length === 1 ? fs[0] : Mul(fs);
+      return Mul([N(c), ...fs]);
+    }
+    if (n.t === 'div') return Div(negate(n.a), n.b);
+    return Mul([N(-1), n]);
+  }
+  const fnArg = (a, sup) => paren(H(a, 0, sup));
+  function H(n, prec = 0, sup = false) {
+    switch (n.t) {
+      case 'num': {
+        const s = numHTML(Math.abs(n.v), sup);
+        const r = (n.v < 0 ? '−' : '') + s;
+        return n.v < 0 && prec > 1 ? paren(r) : r;
+      }
+      case 'x': return '<i>x</i>';
+      case 'const': return n.n === 'e' ? '<i>e</i>' : 'π';
+      case 'raw': return n.s;
+      case 'add': {
+        let out = '';
+        let ts = n.ts;
+        if (isNegN(ts[0])) { const k = ts.findIndex(t => !isNegN(t)); if (k > 0) ts = [ts[k], ...ts.filter((_, j) => j !== k)]; }
+        ts.forEach((t, i) => {
+          const ng = isNegN(t); const tn = ng ? negate(t) : t; let body = H(tn, 1, sup);
+          if (ng && tn.t === 'add') body = paren(body);
+          out += i === 0 ? (ng ? '−' : '') + body : (ng ? ' − ' : ' + ') + body;
+        });
+        return prec > 1 ? paren(out) : out;
+      }
+      case 'mul': {
+        let c = 1; const fs = [];
+        n.fs.forEach(f => { if (f.t === 'num') c *= f.v; else fs.push(f); });
+        if (!fs.length) return H(N(c), prec, sup);
+        const ac = Math.abs(c);
+        let s = ac !== 1 ? numHTML(ac, sup) : '';
+        fs.forEach((f, i) => {
+          const fh = H(f, 2, sup);
+          const startsParen = fh.startsWith('(');
+          if (i === 0) s += ac !== 1 && /^\d/.test(fh) ? '·' + fh : fh;
+          else s += startsParen ? fh : '·' + fh;
+        });
+        const r = (c < 0 ? '−' : '') + s;
+        return c < 0 && prec > 1 ? paren(r) : r;
+      }
+      case 'div': {
+        if (sup) return H(n.a, 2, true) + '/' + H(n.b, 3, true);
+        const ng = isNegN(n.a);
+        const r = (ng ? '−' : '') + frac(H(ng ? negate(n.a) : n.a, 0), H(n.b, 0));
+        return prec > 3 ? paren(r) : r;
+      }
+      case 'pow': {
+        const { a, b } = n;
+        if (a.t === 'fn' && b.t === 'num' && b.v > 0 && isInt(b.v) && !['sqrt', 'cbrt', 'abs'].includes(a.n))
+          return FN_NAME[a.n] + '<sup>' + b.v + '</sup>' + fnArg(a.a, sup);
+        const atom = a.t === 'x' || a.t === 'const' || (a.t === 'raw' && /^\d+$/.test(a.s)) || (a.t === 'num' && a.v >= 0 && isInt(a.v)) || (a.t === 'fn' && ['sqrt', 'cbrt', 'abs'].includes(a.n));
+        const bh = atom ? H(a, 5, sup) : paren(H(a, 0, sup));
+        return bh + '<sup>' + H(b, 0, true) + '</sup>';
+      }
+      case 'fn': {
+        if (n.n === 'sqrt') return `<span class="rad">√<span class="rc">${H(n.a, 0, sup)}</span></span>`;
+        if (n.n === 'cbrt') return `<span class="rad">∛<span class="rc">${H(n.a, 0, sup)}</span></span>`;
+        if (n.n === 'abs') return '|' + H(n.a, 0, sup) + '|';
+        return FN_NAME[n.n] + fnArg(n.a, sup);
+      }
+    }
+  }
+
+  // ---------- Riconoscimento di valori esatti ----------
+  function pretty(v, tol = 1e-9) {
+    if (v === Infinity) return { s: '+∞', v, exact: true };
+    if (v === -Infinity) return { s: '−∞', v, exact: true };
+    if (!isFinite(v)) return { s: '?', v, exact: false };
+    const a = Math.abs(v), sg = v < 0 ? '−' : '', sv = Math.sign(v), t = tol * Math.max(1, a);
+    if (a < t) return { s: '0', v: 0, exact: true };
+    const r = Math.round(a);
+    if (Math.abs(a - r) < t) return { s: sg + r, v: sv * r, exact: true };
+    for (let d = 2; d <= 12; d++) {
+      const n = Math.round(a * d);
+      if (n > 0 && Math.abs(a * d - n) < t * d && gcd(n, d) === 1) return { s: sg + n + '/' + d, v: sv * n / d, exact: true };
+    }
+    for (const d of [1, 2, 3, 4, 6, 12]) {
+      const k = Math.round(a * d / Math.PI);
+      if (k > 0 && Math.abs(a * d / Math.PI - k) < t * d) {
+        const g = gcd(k, d), kk = k / g, dd = d / g;
+        return { s: sg + (kk === 1 ? '' : kk) + 'π' + (dd > 1 ? '/' + dd : ''), v: sv * k * Math.PI / d, exact: true };
+      }
+    }
+    for (let d = 1; d <= 6; d++) for (let p = -12; p <= 12; p++) {
+      const w = v * d - p, n = Math.round(w * w);
+      if (n < 2 || n > 300) continue;
+      const sq = Math.round(Math.sqrt(n)); if (sq * sq === n) continue;
+      if (Math.abs(Math.abs(w) - Math.sqrt(n)) < t * d) {
+        let c = 1, m = n;
+        for (let q = 2; q * q <= m; q++) while (m % (q * q) === 0) { m /= q * q; c *= q; }
+        const g = gcd(gcd(p, c), d), P = p / g, Cc = c / g, Dd = d / g, ws = w < 0 ? -1 : 1;
+        const rad = (Cc === 1 ? '' : Cc) + '√' + m;
+        const Ps = P < 0 ? '−' + (-P) : String(P);
+        let s;
+        if (P === 0) s = (ws < 0 ? '−' : '') + rad + (Dd > 1 ? '/' + Dd : '');
+        else { const num = Ps + (ws < 0 ? ' − ' : ' + ') + rad; s = Dd > 1 ? '(' + num + ')/' + Dd : num; }
+        return { s, v: (p + ws * Math.sqrt(n)) / d, exact: true };
+      }
+    }
+    const SUP = { 1: '', 2: '²', 3: '³', 4: '⁴' };
+    for (const k of [1, -1, 2, -2, 3, -3, 4, -4, 0.5, -0.5, 1.5, -1.5, 2.5, -2.5]) {
+      const w = a / Math.exp(k);
+      for (let d = 1; d <= 12; d++) {
+        const n = Math.round(w * d);
+        if (n < 1 || n > 60 || gcd(n, d) !== 1 || Math.abs(w * d - n) > t * d / Math.max(1, Math.exp(k))) continue;
+        const ak = Math.abs(k);
+        const ep = isInt(ak) ? 'e' + SUP[ak] : (ak === 0.5 ? '√e' : 'e' + SUP[Math.floor(ak)] + '√e');
+        let str;
+        if (k > 0) str = (n > 1 ? n : '') + ep + (d > 1 ? '/' + d : '');
+        else { const den = (d > 1 ? d : '') + ep; str = n + '/' + (/^(e[²³⁴]?|√e)$/.test(den) ? den : '(' + den + ')'); }
+        return { s: sg + str, v: sv * n / d * Math.exp(k), exact: true };
+      }
+    }
+    for (let k = 2; k <= 20; k++) { const L = Math.log(k); if (Math.abs(a - L) < t) return { s: sg + 'ln ' + k, v: sv * L, exact: true }; }
+    return { s: '≈ ' + sg + fmtDec(a), v, exact: false };
+  }
+  const snap = (v, tol) => { const p = pretty(v, tol); return p.exact ? p.v : v; };
+
+  // ---------- Analisi numerica ----------
+  const XMIN = -60, XMAX = 60, SPU = 200; // campioni per unità
+  const NS = (XMAX - XMIN) * SPU;
+  const gx = i => (i - NS / 2) / SPU;
+
+  function singularSubs(n, out = []) {
+    switch (n.t) {
+      case 'add': n.ts.forEach(t => singularSubs(t, out)); break;
+      case 'mul': n.fs.forEach(t => singularSubs(t, out)); break;
+      case 'div': if (hasX(n.b)) out.push(n.b); singularSubs(n.a, out); singularSubs(n.b, out); break;
+      case 'pow':
+        if (n.b.t === 'num' && n.b.v < 0 && hasX(n.a)) out.push(n.a);
+        if (n.b.t === 'mul' && coefOf(n.b) < 0 && !hasX(n.b) && hasX(n.a)) out.push(n.a);
+        singularSubs(n.a, out); singularSubs(n.b, out); break;
+      case 'fn':
+        if ((n.n === 'ln' || n.n === 'log10') && hasX(n.a)) out.push(n.a);
+        if (n.n === 'tan') out.push(Fn('cos', n.a));
+        if (n.n === 'cot') out.push(Fn('sin', n.a));
+        singularSubs(n.a, out); break;
+    }
+    return out;
+  }
+
+  function bisect(G, a, b, it = 80) {
+    let fa = G(a);
+    for (let k = 0; k < it; k++) {
+      const m = (a + b) / 2, fm = G(m);
+      if (fm === 0) return m;
+      if ((fa < 0) === (fm < 0)) { a = m; fa = fm; } else b = m;
+    }
+    return (a + b) / 2;
+  }
+  function golden(G, a, b) {
+    const r = (Math.sqrt(5) - 1) / 2;
+    let c = b - r * (b - a), d = a + r * (b - a);
+    for (let k = 0; k < 90; k++) {
+      if (Math.abs(G(c)) < Math.abs(G(d))) b = d; else a = c;
+      c = b - r * (b - a); d = a + r * (b - a);
+    }
+    return (a + b) / 2;
+  }
+  function uniq(arr, tol = 1e-7) {
+    arr.sort((a, b) => a - b);
+    const out = [];
+    for (const v of arr) if (!out.length || Math.abs(v - out[out.length - 1]) > tol * Math.max(1, Math.abs(v))) out.push(v);
+    return out;
+  }
+  function roots(G) {
+    const ys = new Float64Array(NS + 1);
+    let zc = 0, fc = 0;
+    for (let i = 0; i <= NS; i++) { ys[i] = G(gx(i)); if (isFinite(ys[i])) { fc++; if (Math.abs(ys[i]) < 1e-12) zc++; } }
+    if (fc > 0 && zc > fc * 0.3) { const r = []; r.identically = true; return r; }
+    const out = [];
+    const accept = r => { const g = G(r); if (Math.abs(g) < 1e-7) out.push(snap(r, 1e-9)); };
+    for (let i = 0; i <= NS; i++) {
+      const y = ys[i];
+      if (y === 0) { out.push(gx(i)); continue; }
+      if (i > 0) {
+        const p = ys[i - 1];
+        if (isFinite(p) && isFinite(y) && p !== 0 && (p < 0) !== (y < 0)) accept(bisect(G, gx(i - 1), gx(i)));
+      }
+      if (i > 0 && i < NS) {
+        const p = ys[i - 1], q = ys[i + 1];
+        if (isFinite(p) && isFinite(q) && isFinite(y) && Math.abs(y) <= Math.abs(p) && Math.abs(y) <= Math.abs(q) && (p < 0) === (q < 0) && (p < 0) === (y < 0) && Math.abs(y) < 0.05) {
+          const r = golden(G, gx(i - 1), gx(i + 1));
+          if (Math.abs(G(r)) < 1e-9) out.push(snap(r, 1e-6));
+        }
+      }
+    }
+    return uniq(out);
+  }
+
+  // Limiti numerici
+  function judge(vals) {
+    const v = vals.filter(x => !Number.isNaN(x));
+    if (v.length < 4) return { k: 'nd' };
+    const n = v.length, last = v[n - 1];
+    if (!isFinite(last)) {
+      const s = Math.sign(last);
+      return { k: 'inf', s };
+    }
+    const d1 = Math.abs(v[n - 1] - v[n - 2]), d0 = Math.abs(v[n - 2] - v[n - 3]), dm = Math.abs(v[n - 3] - v[n - 4]);
+    const scale = 1 + Math.abs(last);
+    if (d1 < 1e-5 * scale && (d1 <= d0 * 1.0001 || d1 < 1e-10 * scale) && d0 < 1e-2 * scale) {
+      const p = pretty(last, 2e-5);
+      return { k: 'fin', v: p.exact ? p.v : last, p };
+    }
+    const s = Math.sign(last);
+    let mono = s !== 0;
+    for (let k = n - 4; k < n - 1; k++) if (!(Math.abs(v[k + 1]) > Math.abs(v[k]) && Math.sign(v[k + 1]) === s)) mono = false;
+    if (mono && (Math.abs(last) > 1e5 || d1 >= 0.3 * dm)) return { k: 'inf', s };
+    return { k: 'ne' };
+  }
+  const limAt = (G, a, side) => { const vals = []; for (let k = 3; k <= 8; k++) vals.push(G(a + side * Math.pow(10, -k) * Math.max(1, Math.abs(a)))); return judge(vals); };
+  const limInf = (G, s) => { const vals = []; for (let k = 1; k <= 8; k++) vals.push(G(s * Math.pow(10, k))); return judge(vals); };
+  const limStr = L => (L.k === 'fin' ? L.p.s : L.k === 'inf' ? (L.s > 0 ? '+∞' : '−∞') : 'non esiste');
+
+  function fmtX(x) { return pretty(x).s; }
+
+  function analyze(src) {
+    const f = parse(src);
+    const F = C(f);
+    const fHTML = H(f);
+    // derivate
+    let d1 = S(D(f)), d2 = S(D(d1));
+    let F1 = C(d1), F2 = C(d2);
+    const nd = (G, x) => { const h = 1e-5 * Math.max(1, Math.abs(x)); return (G(x + h) - G(x - h)) / (2 * h); };
+    const probe = [0.37, 1.73, -2.41, 3.9, -0.61, 5.3, -4.2, 0.93, 7.7, 12.4];
+    let d1ok = true, d2ok = true;
+    for (const x of probe) {
+      const y = F(x); if (!isFinite(y)) continue;
+      const a = F1(x), b = nd(F, x);
+      if (isFinite(a) && isFinite(b) && Math.abs(a - b) > 1e-3 * (1 + Math.abs(b))) d1ok = false;
+      const c = F2(x), e = nd(F1, x);
+      if (isFinite(c) && isFinite(e) && Math.abs(c - e) > 1e-3 * (1 + Math.abs(e))) d2ok = false;
+    }
+    if (!d1ok) { d1 = S(D(f)); F1 = x => nd(F, x); }
+    if (!d2ok) { F2 = x => nd(F1, x); }
+
+    // ---- Dominio ----
+    const ys = new Float64Array(NS + 1);
+    for (let i = 0; i <= NS; i++) ys[i] = F(gx(i));
+    const def = v => !Number.isNaN(v);
+    const runs = [];
+    for (let i = 0; i <= NS;) {
+      if (!def(ys[i])) { i++; continue; }
+      let j = i; while (j + 1 <= NS && def(ys[j + 1])) j++;
+      if (j - i >= 2) runs.push([i, j]);
+      i = j + 1;
+    }
+    if (!runs.length) fail('Non ho trovato punti in cui la funzione è definita tra −60 e 60.');
+    const boundary = (bad, good, dir) => {
+      const G = x => (def(F(x)) ? 1 : -1);
+      let a = bad, b = good;
+      for (let k = 0; k < 70; k++) { const m = (a + b) / 2; if (G(m) > 0) b = m; else a = m; }
+      const p = pretty(b, 1e-9);
+      let closed;
+      if (p.exact) closed = isFinite(F(p.v));
+      else {
+        const y0 = F(b), y1 = F(b + dir * 1e-6);
+        closed = isFinite(y0) && isFinite(y1) && Math.abs(y0 - y1) < 0.05;
+      }
+      return { x: p.exact ? p.v : b, closed };
+    };
+    let intervals = runs.map(([i, j]) => {
+      const L = i === 0 ? { x: -Infinity, closed: false } : boundary(gx(i - 1), gx(i), 1);
+      const R = j === NS ? { x: Infinity, closed: false } : boundary(gx(j + 1), gx(j), -1);
+      return { a: L.x, ac: L.closed, b: R.x, bc: R.closed };
+    });
+    // punti singolari isolati
+    const inIv = (x, iv, strict) => (x > iv.a && x < iv.b) || (!strict && ((x === iv.a && iv.ac) || (x === iv.b && iv.bc)));
+    let excl = [];
+    for (const s of singularSubs(f)) {
+      const G = C(s);
+      for (const r of roots(G)) if (intervals.some(iv => inIv(r, iv, true))) excl.push(r);
+    }
+    excl = uniq(excl);
+    // spezza gli intervalli
+    for (const c of excl) {
+      const out = [];
+      for (const iv of intervals) {
+        if (c > iv.a && c < iv.b) { out.push({ a: iv.a, ac: iv.ac, b: c, bc: false }); out.push({ a: c, ac: false, b: iv.b, bc: iv.bc }); }
+        else out.push(iv);
+      }
+      intervals = out;
+    }
+    // punti esclusi = estremi aperti condivisi da due intervalli
+    const exclPts = [];
+    for (let k = 0; k + 1 < intervals.length; k++) if (Math.abs(intervals[k].b - intervals[k + 1].a) < 1e-12 && !intervals[k].bc && !intervals[k + 1].ac) exclPts.push(intervals[k].b);
+    const inDom = x => intervals.some(iv => (x > iv.a + 1e-13 && x < iv.b - 1e-13) || (Math.abs(x - iv.a) <= 1e-13 && iv.ac) || (Math.abs(x - iv.b) <= 1e-13 && iv.bc));
+    const finBounds = [];
+    intervals.forEach(iv => { if (isFinite(iv.a)) finBounds.push({ x: iv.a, closed: iv.ac }); if (isFinite(iv.b)) finBounds.push({ x: iv.b, closed: iv.bc }); });
+    const boundXs = uniq(finBounds.map(b => b.x), 1e-12);
+
+    // ---- Simmetrie e periodicità ----
+    let pari = true, dispari = true, pairs = 0, asym = false;
+    for (let k = 0; k < 400; k++) {
+      const x = 0.0731 + k * 0.0497;
+      const a = F(x), b = F(-x);
+      if (isFinite(a) !== isFinite(b)) { asym = true; break; }
+      if (!isFinite(a)) continue;
+      pairs++;
+      if (Math.abs(a - b) > 1e-9 * (1 + Math.abs(a))) pari = false;
+      if (Math.abs(a + b) > 1e-9 * (1 + Math.abs(a))) dispari = false;
+    }
+    if (asym || pairs < 20) { pari = false; dispari = false; }
+    let constant = true; { const y0 = F(0.4321); for (let k = 0; k < 50; k++) { const y = F(-9 + k * 0.37); if (isFinite(y) && isFinite(y0) && Math.abs(y - y0) > 1e-9) { constant = false; break; } } }
+    let period = null;
+    if (!constant) {
+      const cands = [1, Math.PI / 2, 2, Math.PI, 4, 2 * Math.PI, 3 * Math.PI, 4 * Math.PI].sort((a, b) => a - b);
+      for (const T of cands) {
+        let ok = true, cnt = 0;
+        for (let k = 0; k < 300; k++) {
+          const x = -20 + k * 0.1337;
+          const a = F(x), b = F(x + T);
+          if (isFinite(a) !== isFinite(b) && Math.abs(a) < 1e6 && Math.abs(b) < 1e6) { ok = false; break; }
+          if (!isFinite(a) || !isFinite(b) || Math.abs(a) > 1e6) continue;
+          cnt++;
+          if (Math.abs(a - b) > 1e-7 * (1 + Math.abs(a))) { ok = false; break; }
+        }
+        if (ok && cnt > 100) { period = T; break; }
+      }
+    }
+
+    // ---- Zeri e intersezioni ----
+    const zeros = roots(F).filter(r => inDom(r));
+    const yInt = inDom(0) && isFinite(F(0)) ? { x: 0, y: F(0) } : null;
+
+    // ---- Limiti e asintoti ----
+    const limits = [], asymptotes = [], discont = [];
+    const leftOf = c => intervals.some(iv => Math.abs(iv.b - c) < 1e-12);
+    const rightOf = c => intervals.some(iv => Math.abs(iv.a - c) < 1e-12);
+    const openPts = uniq(finBounds.filter(b => !b.closed).map(b => b.x), 1e-12);
+    const vertAs = [];
+    for (const c of openPts) {
+      const L = leftOf(c) ? limAt(F, c, -1) : null;
+      const R = rightOf(c) ? limAt(F, c, 1) : null;
+      if (L) limits.push({ at: c, side: '⁻', L });
+      if (R) limits.push({ at: c, side: '⁺', L: R });
+      if ((L && L.k === 'inf') || (R && R.k === 'inf')) { vertAs.push(c); asymptotes.push({ type: 'verticale', x: c, eq: `x = ${fmtX(c)}` }); }
+      if (L && R) {
+        let kind;
+        if (L.k === 'fin' && R.k === 'fin') kind = Math.abs(L.v - R.v) < 1e-5 * (1 + Math.abs(L.v)) ? 3 : 1;
+        else kind = 2;
+        discont.push({ x: c, kind, value: kind === 3 ? L.v : null });
+      }
+    }
+    const unboundedL = intervals.length && intervals[0].a === -Infinity;
+    const unboundedR = intervals.length && intervals[intervals.length - 1].b === Infinity;
+    const infLims = {};
+    for (const s of [-1, 1]) {
+      if ((s < 0 && !unboundedL) || (s > 0 && !unboundedR)) continue;
+      let L = limInf(F, s);
+      if (period && !constant) L = { k: 'ne' };
+      infLims[s] = L;
+      limits.push({ at: s * Infinity, L });
+      if (L.k === 'fin') asymptotes.push({ type: 'orizzontale', side: s, m: 0, q: L.v, eq: `y = ${L.p.s}` });
+      else if (L.k === 'inf') {
+        const M = limInf(x => F(x) / x, s);
+        if (M.k === 'fin' && Math.abs(M.v) > 1e-6) {
+          const m = M.v;
+          const Q = limInf(x => F(x) - m * x, s);
+          if (Q.k === 'fin') {
+            const ms = M.p.s, qs = Q.p.s;
+            const mx = ms === '1' ? 'x' : ms === '−1' ? '−x' : (ms.includes('/') || ms.includes('≈') ? `(${ms})x` : ms + 'x');
+            const eq = 'y = ' + mx + (Q.v === 0 ? '' : (Q.v < 0 ? ' − ' + qs.replace('−', '') : ' + ' + qs));
+            asymptotes.push({ type: 'obliqua', side: s, m, q: Q.v, eq });
+          }
+        }
+      }
+    }
+    // unisci asintoti uguali a ±∞
+    const asy = [];
+    for (const a of asymptotes) {
+      if (a.type === 'verticale') { asy.push(a); continue; }
+      const same = asy.find(b => b.type === a.type && Math.abs(b.m - a.m) < 1e-9 && Math.abs(b.q - a.q) < 1e-9);
+      if (same) same.side = 0; else asy.push({ ...a });
+    }
+
+    // ---- Derivata prima ----
+    const critical = roots(F1).filter(r => inDom(r) && isFinite(F(r)));
+    const interior = x => intervals.some(iv => x > iv.a + 1e-12 && x < iv.b - 1e-12);
+    let ndCands = [];
+    for (const s of singularSubs(d1)) for (const r of roots(C(s))) ndCands.push(r);
+    for (let i = 1; i < NS; i++) {
+      const x = gx(i);
+      if (!isFinite(ys[i]) || isFinite(F1(x))) continue;
+      if (isFinite(F1(gx(i - 1))) && isFinite(F1(gx(i + 1)))) ndCands.push(x);
+    }
+    ndCands = uniq(ndCands).filter(c => interior(c) && isFinite(F(c)) && !excl.some(e => Math.abs(e - c) < 1e-9));
+    const nonDiff = [];
+    for (const c of ndCands) {
+      const l = limAt(F1, c, -1), r = limAt(F1, c, 1);
+      let type = null;
+      if (l.k === 'fin' && r.k === 'fin') { if (Math.abs(l.v - r.v) > 1e-4 * (1 + Math.abs(l.v))) type = 'punto angoloso'; }
+      else if (l.k === 'inf' && r.k === 'inf') type = l.s !== r.s ? 'cuspide' : 'flesso a tangente verticale';
+      else if ((l.k === 'fin' && r.k === 'inf') || (l.k === 'inf' && r.k === 'fin')) type = 'punto angoloso';
+      else type = 'punto di non derivabilità';
+      if (type) nonDiff.push({ x: c, type, l, r });
+    }
+
+    // ---- Linee dei segni ----
+    function buildLine(G, pts) {
+      const P = uniq(pts.slice(), 1e-12);
+      const ends = [-Infinity, ...P, Infinity];
+      const segs = [];
+      for (let k = 0; k + 1 < ends.length; k++) {
+        const a = ends[k], b = ends[k + 1];
+        let m;
+        if (!isFinite(a) && !isFinite(b)) m = 0.123;
+        else if (!isFinite(a)) m = b - 1;
+        else if (!isFinite(b)) m = a + 1;
+        else m = (a + b) / 2;
+        let sg;
+        if (!inDom(m) || !isFinite(F(m))) sg = 'out';
+        else { const g = G(m); sg = !isFinite(g) ? 'out' : Math.abs(g) < 1e-12 ? '0' : g > 0 ? '+' : '−'; }
+        segs.push({ a, b, s: sg });
+      }
+      const marks = P.map(x => {
+        if (!inDom(x)) return { x, m: 'nd' };
+        const g = G(x);
+        if (!isFinite(g)) return { x, m: 'nd' };
+        return { x, m: Math.abs(g) < 1e-9 ? '0' : 'v' };
+      });
+      return { pts: marks, segs };
+    }
+    const signLine = buildLine(F, [...boundXs, ...zeros]);
+    const monoLine = buildLine(F1, [...boundXs, ...critical, ...nonDiff.map(n => n.x)]);
+
+    // estremi
+    const extrema = [], flex = [];
+    monoLine.pts.forEach((p, k) => {
+      if (!inDom(p.x) || !isFinite(F(p.x))) return;
+      const L = monoLine.segs[k].s, R = monoLine.segs[k + 1].s;
+      const y = F(p.x); let type = null;
+      if (L === '+' && R === '−') type = 'max';
+      else if (L === '−' && R === '+') type = 'min';
+      else if (L === 'out' && R === '+') type = 'min';
+      else if (L === 'out' && R === '−') type = 'max';
+      else if (L === '+' && R === 'out') type = 'max';
+      else if (L === '−' && R === 'out') type = 'min';
+      if (type) extrema.push({ x: p.x, y, type, endpoint: L === 'out' || R === 'out', nd: nonDiff.find(n => Math.abs(n.x - p.x) < 1e-9) });
+      else if (L === R && (L === '+' || L === '−') && p.m === '0') flex.push({ x: p.x, y, type: 'a tangente orizzontale' });
+    });
+    // assoluti
+    let gmax = -Infinity, gmin = Infinity;
+    for (let i = 0; i <= NS; i++) if (isFinite(ys[i])) { if (ys[i] > gmax) gmax = ys[i]; if (ys[i] < gmin) gmin = ys[i]; }
+    const limVals = limits.map(l => l.L);
+    const supInf = limVals.some(L => L.k === 'inf' && L.s > 0), infInf = limVals.some(L => L.k === 'inf' && L.s < 0);
+    const supFin = Math.max(-Infinity, ...limVals.filter(L => L.k === 'fin').map(L => L.v));
+    const infFin = Math.min(Infinity, ...limVals.filter(L => L.k === 'fin').map(L => L.v));
+    for (const e of extrema) {
+      const tol = 1e-7 * (1 + Math.abs(e.y));
+      if (e.type === 'max') e.abs = !supInf && e.y >= gmax - tol && e.y >= supFin - tol;
+      else e.abs = !infInf && e.y <= gmin + tol && e.y <= infFin + tol;
+    }
+
+    // ---- Derivata seconda ----
+    const z2 = roots(F2).filter(r => inDom(r) && isFinite(F(r)));
+    let s2 = [];
+    for (const s of singularSubs(d2)) for (const r of roots(C(s))) s2.push(r);
+    s2 = uniq(s2).filter(c => interior(c) && isFinite(F(c)));
+    const concLine = buildLine(F2, [...boundXs, ...z2, ...s2, ...nonDiff.map(n => n.x)]);
+    concLine.pts.forEach((p, k) => {
+      if (!inDom(p.x) || !isFinite(F(p.x))) return;
+      const L = concLine.segs[k].s, R = concLine.segs[k + 1].s;
+      if (!((L === '+' && R === '−') || (L === '−' && R === '+'))) return;
+      const nd = nonDiff.find(n => Math.abs(n.x - p.x) < 1e-9);
+      if (nd && nd.type !== 'flesso a tangente verticale') return;
+      if (flex.some(q => Math.abs(q.x - p.x) < 1e-9)) return;
+      const d = F1(p.x);
+      const type = nd ? 'a tangente verticale' : Math.abs(d) < 1e-9 ? 'a tangente orizzontale' : 'a tangente obliqua';
+      flex.push({ x: p.x, y: F(p.x), type, slope: d });
+    });
+    nonDiff.filter(n => n.type === 'flesso a tangente verticale').forEach(n => { if (!flex.some(q => Math.abs(q.x - n.x) < 1e-9)) flex.push({ x: n.x, y: F(n.x), type: 'a tangente verticale' }); });
+    flex.sort((a, b) => a.x - b.x);
+
+    // ---- Finestra di presentazione ----
+    let W = { lo: -Infinity, hi: Infinity, kind: 'all' };
+    if (period) W = { lo: 0, hi: period, kind: 'period' };
+    else if (Math.max(zeros.length, exclPts.length, critical.length, z2.length, extrema.length, flex.length) > 12) W = { lo: -2 * Math.PI, hi: 2 * Math.PI, kind: 'many' };
+    const inW = x => x >= W.lo - 1e-9 && (W.kind === 'period' ? x < W.hi - 1e-9 : x <= W.hi + 1e-9);
+    function windowLine(line) {
+      const inner = line.pts.filter(p => p.x > W.lo + 1e-9 && p.x < W.hi - 1e-9);
+      const atLo = line.pts.find(p => Math.abs(p.x - W.lo) < 1e-9), atHi = line.pts.find(p => Math.abs(p.x - W.hi) < 1e-9);
+      const ends = [W.lo, ...inner.map(p => p.x), W.hi];
+      const segs = [];
+      for (let k = 0; k + 1 < ends.length; k++) {
+        const a = ends[k], b = ends[k + 1];
+        const mid = !isFinite(a) && !isFinite(b) ? 0.123 : !isFinite(a) ? b - 1 : !isFinite(b) ? a + 1 : (a + b) / 2;
+        const sg = line.segs.find(q => mid > q.a && mid < q.b);
+        segs.push({ a, b, s: sg ? sg.s : 'out' });
+      }
+      return { pts: [{ x: W.lo, edge: true, m: atLo ? atLo.m : null }, ...inner, { x: W.hi, edge: true, m: atHi ? atHi.m : null }], segs };
+    }
+    const domWin = intervals.map(iv => ({ ...iv })).filter(iv => iv.b > W.lo && iv.a < W.hi).map(iv => {
+      if (iv.a < W.lo) { iv.a = W.lo; iv.ac = inDom(W.lo); }
+      if (iv.b > W.hi) { iv.b = W.hi; iv.bc = W.kind === 'period' ? false : inDom(W.hi); }
+      return iv;
+    });
+
+    return {
+      W, inW, domWin, signW: windowLine(signLine), monoW: windowLine(monoLine), concW: windowLine(concLine),
+      d2zero: !!(roots(F2).identically),
+      d1n: d1, d2n: d2,
+      f, F, F1, F2, fHTML, d1HTML: H(d1), d2HTML: d2ok ? H(d2) : null, d1ok, d2ok,
+      intervals, excl: exclPts, boundXs, inDom, pari, dispari, period, constant,
+      zeros, yInt, limits, asymptotes: asy, vertAs, discont, infLims,
+      critical, nonDiff, extrema, flex, signLine, monoLine, concLine, z2
+    };
+  }
+
+  return {
+    parse, analyze, S, D, H, C, pretty, fmtDec, toPoly, UserError,
+    N, X, E, PI, Add, Mul, Div, Pow, Fn, neg, hasX, key, factorize, singularSubs, roots, limAt, limInf, judge,
+    pClean, pDiv, fromPoly, pAdd, pMul, isInt, gcd, coefOf, isNegN, negate, FN_EVAL, frac, numHTML
+  };
+})();
+if (typeof module !== 'undefined') module.exports = Studio;
+
+</script>
+<script>
+/* ===== Modulo "calcoli": costruisce i passaggi scritti di ogni punto dello studio ===== */
+const Work = (() => {
+  'use strict';
+  const T = Studio;
+  const { N, X, Add, Mul, Div, Pow, Fn, H, S, D, C, hasX, singularSubs, roots, toPoly, pClean, pDiv, fromPoly, isInt, frac } = T;
+  const P = v => T.pretty(v).s;
+  const xs = '<i>x</i>';
+  const ln = (h, cls) => `<div class="cl${cls ? ' ' + cls : ''}">${h}</div>`;
+  const note = h => `<div class="cl nt">${h}</div>`;
+  const head = h => `<div class="cl hd">${h}</div>`;
+  const block = (title, lines) => `<div class="cb">${title ? head(title) : ''}${lines.join('')}</div>`;
+  const uniq = (arr, tol = 1e-9) => {
+    arr = arr.filter(v => Number.isFinite(v)).sort((a, b) => a - b);
+    const out = [];
+    for (const v of arr) if (!out.length || Math.abs(v - out[out.length - 1]) > tol * Math.max(1, Math.abs(v))) out.push(v);
+    return out;
+  };
+  const sup = n => String(n).replace(/\d/g, d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]);
+  const nz = v => (v < 0 ? `(${P(v)})` : P(v));
+  const evalPoly = (p, x) => { let s = 0; for (let k = p.length - 1; k >= 0; k--) s = s * x + p[k]; return s; };
+
+  // ---------- nodi di servizio ----------
+  function valNode(v) {
+    const p = T.pretty(v);
+    if (!p.exact) return N(+v.toFixed(4));
+    const a = Math.abs(v);
+    if (isInt(v) && a > 1) return N(Math.round(v));
+    const raw = { t: 'raw', s: P(a), v: a };
+    return v < 0 ? Mul([N(-1), raw]) : raw;
+  }
+  function subst(n, rep) {
+    switch (n.t) {
+      case 'x': return rep;
+      case 'add': return Add(n.ts.map(t => subst(t, rep)));
+      case 'mul': return Mul(n.fs.map(t => subst(t, rep)));
+      case 'div': return Div(subst(n.a, rep), subst(n.b, rep));
+      case 'pow': return Pow(subst(n.a, rep), subst(n.b, rep));
+      case 'fn': return Fn(n.n, subst(n.a, rep));
+      default: return n;
+    }
+  }
+  function tidy(n) {
+    const isZ = t => t.t === 'num' && t.v === 0;
+    switch (n.t) {
+      case 'add': {
+        const fl = [];
+        n.ts.map(tidy).forEach(t => (t.t === 'add' ? fl.push(...t.ts) : fl.push(t)));
+        let c = 0; const rest = [];
+        fl.forEach(t => (t.t === 'num' ? (c += t.v) : rest.push(t)));
+        if (c !== 0) rest.push(N(c));
+        if (!rest.length) return N(0);
+        return rest.length === 1 ? rest[0] : Add(rest);
+      }
+      case 'mul': {
+        const fl = [];
+        n.fs.map(tidy).forEach(t => (t.t === 'mul' ? fl.push(...t.fs) : fl.push(t)));
+        if (fl.some(isZ)) return N(0);
+        let c = 1; const rest = [];
+        fl.forEach(t => (t.t === 'num' ? (c *= t.v) : rest.push(t)));
+        if (!rest.length) return N(c);
+        const out = c === 1 ? rest : [N(c), ...rest];
+        return out.length === 1 ? out[0] : Mul(out);
+      }
+      case 'div': {
+        const a = tidy(n.a), b = tidy(n.b);
+        if (isZ(a)) return N(0);
+        if (b.t === 'num' && b.v === 1) return a;
+        return Div(a, b);
+      }
+      case 'pow': {
+        const a = tidy(n.a), b = tidy(n.b);
+        if (b.t === 'num' && b.v === 1) return a;
+        if (b.t === 'num' && b.v === 0) return N(1);
+        return Pow(a, b);
+      }
+      case 'fn': return Fn(n.n, tidy(n.a));
+      default: return n;
+    }
+  }
+  const zerosOf = node => {
+    let z = [...roots(C(node))];
+    for (const s of singularSubs(node)) z.push(...roots(C(s)));
+    return uniq(z);
+  };
+  const signAt = (G, x) => { const y = G(x); return !Number.isFinite(y) ? 'out' : Math.abs(y) < 1e-12 ? '0' : y > 0 ? '+' : '−'; };
+  const midOf = (a, b) => (!isFinite(a) && !isFinite(b) ? 0.123 : !isFinite(a) ? b - 1 : !isFinite(b) ? a + 1 : (a + b) / 2);
+  function partition(pts, lo, hi) {
+    const inner = pts.filter(p => p > lo + 1e-9 && p < hi - 1e-9);
+    const ps = [lo, ...inner, hi];
+    const mids = []; for (let k = 0; k + 1 < ps.length; k++) mids.push(midOf(ps[k], ps[k + 1]));
+    return { ps, mids };
+  }
+  const xlab = x => (x === -Infinity ? '−∞' : x === Infinity ? '+∞' : P(x));
+
+  // testo di una disuguaglianza risolta: tratti in cui G è positiva (con o senza gli zeri)
+  function solutionText(node, inclZero, lo = -Infinity, hi = Infinity) {
+    const G = C(node);
+    const z = zerosOf(node);
+    const { ps, mids } = partition(z, lo, hi);
+    const items = [];
+    mids.forEach((m, k) => {
+      items.push({ seg: true, a: ps[k], b: ps[k + 1], ok: signAt(G, m) === '+' });
+      if (k + 1 < ps.length - 1) { const y = G(ps[k + 1]); items.push({ seg: false, x: ps[k + 1], ok: inclZero && Number.isFinite(y) && Math.abs(y) < 1e-9 }); }
+    });
+    const runs = []; let cur = null;
+    for (const it of items) {
+      if (it.ok) { if (!cur) cur = { first: it, last: it }; else cur.last = it; } else if (cur) { runs.push(cur); cur = null; }
+    }
+    if (cur) runs.push(cur);
+    if (!runs.length) return 'nessun valore di ' + xs;
+    const txt = runs.map(r => {
+      const lo_ = r.first.seg ? r.first.a : r.first.x, loInc = !r.first.seg;
+      const hi_ = r.last.seg ? r.last.b : r.last.x, hiInc = !r.last.seg;
+      const A = isFinite(lo_) ? P(lo_) : null, B = isFinite(hi_) ? P(hi_) : null;
+      if (!A && !B) return `∀ ${xs} ∈ ℝ`;
+      if (A && B && r.first === r.last && !r.first.seg) return `${xs} = ${A}`;
+      if (!A) return `${xs} ${hiInc ? '≤' : '&lt;'} ${B}`;
+      if (!B) return `${xs} ${loInc ? '≥' : '&gt;'} ${A}`;
+      return `${A} ${loInc ? '≤' : '&lt;'} ${xs} ${hiInc ? '≤' : '&lt;'} ${B}`;
+    });
+    return txt.join(' &nbsp;∨&nbsp; ');
+  }
+  // dai segni già calcolati
+  function signsText(ps, signs, want) {
+    const parts = [];
+    signs.forEach((s, k) => {
+      if (s !== want) return;
+      const a = ps[k], b = ps[k + 1], A = isFinite(a) ? P(a) : null, B = isFinite(b) ? P(b) : null;
+      parts.push(!A && !B ? `∀ ${xs} del dominio` : !A ? `${xs} &lt; ${B}` : !B ? `${xs} &gt; ${A}` : `${A} &lt; ${xs} &lt; ${B}`);
+    });
+    return parts.length ? parts.join(' &nbsp;∨&nbsp; ') : 'in nessun punto';
+  }
+
+  // ---------- polinomi ----------
+  function factorPoly(p0) {
+    let p = pClean(p0.slice());
+    if (p.length < 2) return null;
+    const base = p.slice();
+    const rts = roots(x => evalPoly(base, x)).filter(Number.isFinite);
+    const facs = [];
+    for (const r of rts) {
+      let m = 0;
+      while (p.length >= 2) { const q = pDiv(p, [-r, 1]); if (!q) break; p = q; m++; }
+      if (m) facs.push({ r, m });
+    }
+    return { facs, rem: p };
+  }
+  function factorNode(fp) {
+    const fs = fp.facs.map(({ r, m }) => { const b = r === 0 ? X : Add([X, valNode(-r)]); return m > 1 ? Pow(b, N(m)) : b; });
+    if (fp.rem.length === 1) { if (fp.rem[0] !== 1) fs.unshift(N(fp.rem[0])); }
+    else fs.push(fromPoly(fp.rem));
+    return fs.length === 1 ? fs[0] : Mul(fs);
+  }
+  function pDivRem(n, d) {
+    n = pClean(n.slice()); d = pClean(d.slice());
+    if (d.length < 2 || n.length < d.length) return { q: [0], r: n };
+    const q = new Array(n.length - d.length + 1).fill(0), r = n.slice();
+    for (let k = n.length - d.length; k >= 0; k--) {
+      const c = r[k + d.length - 1] / d[d.length - 1]; q[k] = c;
+      for (let j = 0; j < d.length; j++) r[k + j] -= c * d[j];
+    }
+    return { q: pClean(q), r: pClean(r.slice(0, d.length - 1).length ? r.slice(0, d.length - 1) : [0]) };
+  }
+
+  // ---------- risoluzione di equazioni f(x) = 0 ----------
+  function solvePoly(p) {
+    p = pClean(p.slice());
+    const d = p.length - 1, L = [];
+    const sols = uniq(roots(x => evalPoly(p, x)));
+    if (d === 0) { L.push(ln(p[0] === 0 ? 'L’equazione è sempre verificata.' : 'Equazione impossibile: nessuna soluzione.')); return { lines: L, sols: [] }; }
+    if (d === 1) {
+      const val = P(-p[0] / p[1]);
+      if (p[0] === 0) L.push(ln(`${mm(H(fromPoly(p)))} = 0 &nbsp;⇒&nbsp; <b>${xs} = 0</b>`));
+      else L.push(ln(`${mm(H(fromPoly(p)))} = 0 &nbsp;⇒&nbsp; ${xs} = ${p[1] === 1 ? '' : frac(P(-p[0]), P(p[1])) + ' = '}<b>${val}</b>`));
+      return { lines: L, sols };
+    }
+    if (d === 2) {
+      const [c, b, a] = p;
+      if (b === 0 && c === 0) { L.push(ln(`${mm(H(fromPoly(p)))} = 0 &nbsp;⇒&nbsp; ${xs}² = 0 &nbsp;⇒&nbsp; <b>${xs} = 0</b> (radice doppia)`)); return { lines: L, sols }; }
+      if (c === 0) {
+        L.push(ln(`Raccolgo ${xs}: &nbsp;${mm(H(Mul([X, fromPoly([b, a])])))} = 0`));
+        L.push(ln(`${xs} = 0 &nbsp;∨&nbsp; ${mm(H(fromPoly([b, a])))} = 0 &nbsp;⇒&nbsp; ${xs} = 0 &nbsp;∨&nbsp; <b>${xs} = ${P(-b / a)}</b>`));
+        return { lines: L, sols };
+      }
+      if (b === 0) {
+        const q = -c / a;
+        L.push(ln(`${xs}² = ${a === 1 ? '' : frac(P(-c), P(a)) + ' = '}${P(q)}`));
+        L.push(ln(q < 0 ? 'Un quadrato non può essere negativo: nessuna soluzione reale.' : q === 0 ? `<b>${xs} = 0</b>` : `${xs} = ±√${P(q)} = <b>${sols.map(s => P(s)).join(' ; ')}</b>`));
+        return { lines: L, sols };
+      }
+      const dl = b * b - 4 * a * c;
+      L.push(ln(`${mm(H(fromPoly(p)))} = 0`));
+      L.push(ln(`Δ = <i>b</i>² − 4<i>ac</i> = ${nz(b)}² − 4·${nz(a)}·${nz(c)} = <b>${P(dl)}</b>`));
+      if (dl < -1e-12) L.push(ln('Δ &lt; 0: nessuna soluzione reale.'));
+      else if (Math.abs(dl) < 1e-12) L.push(ln(`Δ = 0: ${xs} = ${frac(P(-b), P(2 * a))} = <b>${P(-b / (2 * a))}</b> (due soluzioni coincidenti)`));
+      else {
+        const sq = Math.sqrt(dl);
+        L.push(ln(`${xs} = ${frac(`${P(-b)} ± √${P(dl)}`, P(2 * a))}${isInt(sq) ? ` = ${frac(`${P(-b)} ± ${P(sq)}`, P(2 * a))}` : ''}`));
+        L.push(ln(`<b>${xs}₁ = ${P(sols[0])}</b>, &nbsp;<b>${xs}₂ = ${P(sols[1])}</b>`));
+      }
+      return { lines: L, sols };
+    }
+    const fp = factorPoly(p);
+    if (fp && fp.facs.length) {
+      L.push(ln(`Scompongo: &nbsp;${mm(H(fromPoly(p)))} = ${mm(H(factorNode(fp)))}`));
+      L.push(ln('Legge di annullamento del prodotto: si annulla un fattore per volta.'));
+      L.push(ln(`<b>${sols.length ? sols.map(s => `${xs} = ${P(s)}`).join(' ; ') : 'nessuna soluzione reale'}</b>`));
+      if (fp.rem.length > 1 && !roots(x => evalPoly(fp.rem, x)).length) L.push(note(`Il fattore ${mm(H(fromPoly(fp.rem)))} non ha zeri reali.`));
+    } else {
+      L.push(ln(`Equazione di grado ${d} senza radici razionali evidenti: risolta numericamente.`));
+      L.push(ln(`<b>${sols.length ? sols.map(s => `${xs} ≈ ${T.fmtDec(s, 4)}`).join(' ; ') : 'nessuna soluzione reale'}</b>`));
+    }
+    return { lines: L, sols };
+  }
+  const mm = h => `<span class="m">${h}</span>`;
+  let WIN = null;
+
+
+  function valueEq(u, target, depth) {
+    if (u.t === 'x') return [ln(`${xs} = <b>${P(target)}</b>`)];
+    return [ln(`${mm(H(u))} = ${P(target)}`), ...solveNode(Add([u, valNode(-target)]), depth + 1).lines];
+  }
+  function isolate(node, depth) {
+    const vars = node.ts.filter(hasX), cons = node.ts.filter(t => !hasX(t));
+    if (vars.length !== 1) return null;
+    const k = cons.length ? C(Add(cons))(0) : 0;
+    let Tn = vars[0], c = 1;
+    if (Tn.t === 'mul') {
+      const nums = Tn.fs.filter(f => f.t === 'num'), oth = Tn.fs.filter(f => f.t !== 'num');
+      if (oth.length === 1 && nums.length) { c = nums.reduce((a, f) => a * f.v, 1); Tn = oth[0]; }
+    }
+    const q = -k / c;
+    const head1 = `Isolo il termine con la <i>x</i>: ${mm(H(Tn))} = ${P(q)}`;
+    if (Tn.t === 'fn' && (Tn.n === 'ln' || Tn.n === 'log10')) {
+      const t = Tn.n === 'ln' ? Math.exp(q) : Math.pow(10, q);
+      return [ln(head1), ln(`Per definizione di logaritmo: ${mm(H(Tn.a))} = ${Tn.n === 'ln' ? '<i>e</i>' : '10'}<sup>${P(q)}</sup> = ${P(t)}`), ...valueEq(Tn.a, t, depth)];
+    }
+    if (Tn.t === 'pow' && Tn.a.t === 'const' && Tn.a.n === 'e') {
+      if (q <= 0) return [ln(head1), ln(`<i>e</i> elevato a qualcosa è sempre positivo: nessuna soluzione.`)];
+      return [ln(head1), ln(`Passo al logaritmo: ${mm(H(Tn.b))} = ln ${P(q)} = ${P(Math.log(q))}`), ...valueEq(Tn.b, Math.log(q), depth)];
+    }
+    if (Tn.t === 'fn' && Tn.n === 'sqrt') {
+      if (q < 0) return [ln(head1), ln('Una radice quadrata non può essere negativa: nessuna soluzione.')];
+      return [ln(head1), ln(`Elevo al quadrato: ${mm(H(Tn.a))} = ${P(q * q)}`), ...valueEq(Tn.a, q * q, depth)];
+    }
+    return null;
+  }
+
+  function solveNode(node, depth = 0) {
+    node = S(node);
+    const p = toPoly(node);
+    if (p) return solvePoly(p);
+    if (node.t === 'add' && depth < 3) {
+      const iL = isolate(node, depth);
+      if (iL) return { lines: iL, sols: uniq(roots(C(node))) };
+    }
+    if (node.t === 'div') {
+      const s = solveNode(node.a, depth + 1);
+      return { lines: [ln('Una frazione si annulla se si annulla il numeratore (con denominatore ≠ 0).'), ...s.lines], sols: s.sols };
+    }
+    if (node.t === 'mul') {
+      const fs = node.fs.filter(f => f.t !== 'num');
+      const L = [ln(`Legge di annullamento del prodotto: ${fs.map(f => mm(H(f)) + ' = 0').join(' &nbsp;∨&nbsp; ')}`)];
+      let all = [];
+      for (const f of fs) { const s = solveFactor(f, depth + 1); L.push(...s.lines); all.push(...s.sols); }
+      return { lines: L, sols: uniq(all) };
+    }
+    return solveFactor(node, depth + 1);
+  }
+  function solveFactor(f, depth) {
+    const L = [];
+    const isExp = f.t === 'pow' && ((f.a.t === 'const' && f.a.n === 'e') || (f.a.t === 'num' && f.a.v > 0));
+    if (isExp) return { lines: [ln(`${mm(H(f))} è sempre positivo: non si annulla mai.`)], sols: [] };
+    if (toPoly(f)) { const s = solvePoly(toPoly(f)); return { lines: s.lines, sols: s.sols }; }
+    if (f.t === 'pow' && f.b.t === 'num' && f.b.v > 0) { const s = solveNode(f.a, depth + 1); return { lines: [ln(`${mm(H(f))} = 0 ⇔ ${mm(H(f.a))} = 0`), ...s.lines], sols: s.sols }; }
+    if (f.t === 'fn' && (f.n === 'sqrt' || f.n === 'cbrt' || f.n === 'abs')) { const s = solveNode(f.a, depth + 1); return { lines: [ln(`${mm(H(f))} = 0 ⇔ ${mm(H(f.a))} = 0`), ...s.lines], sols: s.sols }; }
+    if (f.t === 'fn' && (f.n === 'ln' || f.n === 'log10')) {
+      const target = f.n === 'ln' ? 1 : 1;
+      const s = solveNode(Add([f.a, N(-target)]), depth + 1);
+      return { lines: [ln(`${mm(H(f))} = 0 ⇔ ${mm(H(f.a))} = 1`), ...s.lines], sols: s.sols };
+    }
+    const z = roots(C(f));
+    if (z.identically) return { lines: [ln(`${mm(H(f))} è identicamente nulla.`)], sols: [] };
+    L.push(ln(`${mm(H(f))} = 0 non si risolve con i metodi algebrici: uso la ricerca numerica.`));
+    let zz = uniq(z);
+    if (WIN && WIN.W.kind !== 'all') zz = zz.filter(WIN.inW);
+    L.push(ln(`<b>${zz.length ? zz.map(s => `${xs} = ${P(s)}`).slice(0, 8).join(' ; ') + (zz.length > 8 ? ' ; …' : '') : 'nessuna soluzione reale'}</b>${WIN && WIN.W.kind !== 'all' ? ' <span class="note">(nell’intervallo considerato)</span>' : ''}`));
+    return { lines: L, sols: zz };
+  }
+
+  // ---------- 1. dominio ----------
+  function collectConds(f) {
+    const out = [], seen = new Set();
+    const push = (type, node, why) => { const k = type + T.key(node); if (!seen.has(k)) { seen.add(k); out.push({ type, node, why }); } };
+    (function walk(n) {
+      switch (n.t) {
+        case 'add': n.ts.forEach(walk); break;
+        case 'mul': n.fs.forEach(walk); break;
+        case 'div': if (hasX(n.b)) push('ne0', n.b, 'den'); walk(n.a); walk(n.b); break;
+        case 'pow': {
+          if (hasX(n.a)) {
+            const b = hasX(n.b) ? n.b : S(n.b);
+            if (hasX(b)) push('gt0', n.a, 'base');
+            else {
+              const v = b.t === 'num' ? b.v : b.t === 'div' && b.a.t === 'num' && b.b.t === 'num' ? b.a.v / b.b.v : null;
+              if (v !== null && !isInt(v)) push(v < 0 ? 'gt0' : 'ge0', n.a, v < 0 ? 'radden' : 'rad');
+              else if (v !== null && v < 0) push('ne0', n.a, 'den');
+            }
+          }
+          walk(n.a); walk(n.b); break;
+        }
+        case 'fn':
+          if (hasX(n.a)) {
+            if (n.n === 'sqrt') push('ge0', n.a, 'rad');
+            else if (n.n === 'ln' || n.n === 'log10') push('gt0', n.a, 'log');
+            else if (n.n === 'tan') push('ne0', Fn('cos', n.a), 'tan');
+            else if (n.n === 'cot') push('ne0', Fn('sin', n.a), 'cot');
+            else if (n.n === 'asin' || n.n === 'acos') push('ge0', Add([N(1), Mul([N(-1), Pow(n.a, N(2))])]), 'arc');
+          }
+          walk(n.a); break;
+      }
+    })(f);
+    return out;
+  }
+  const WHY = {
+    den: 'Il denominatore non può essere nullo', rad: 'Il radicando di una radice di indice pari deve essere ≥ 0',
+    radden: 'La base di una potenza con esponente frazionario negativo deve essere > 0', log: 'L’argomento di un logaritmo deve essere > 0',
+    base: 'La base di una potenza con esponente variabile deve essere > 0', tan: 'La tangente non esiste dove il coseno si annulla',
+    cot: 'La cotangente non esiste dove il seno si annulla', arc: 'L’argomento di arcsen/arccos deve stare tra −1 e 1, cioè 1 − u² ≥ 0'
+  };
+  const ivStr = iv => (iv.a === -Infinity ? '(' : iv.ac ? '[' : '(') + P(iv.a) + '; ' + P(iv.b) + (iv.b === Infinity ? ')' : iv.bc ? ']' : ')');
+
+  function domainCalc(r) {
+    const conds = collectConds(r.f);
+    const L = [];
+    if (!conds.length) {
+      L.push(ln('Nella funzione non compaiono frazioni con la <i>x</i> al denominatore, radici di indice pari o logaritmi: nessuna condizione da imporre.'));
+      L.push(ln('<b>D = ℝ</b>'));
+      return block('', L);
+    }
+    conds.forEach((c, i) => {
+      const nd = S(c.node);
+      const sym = { ne0: '≠ 0', ge0: '≥ 0', gt0: '&gt; 0' }[c.type];
+      const parts = [head(`Condizione${conds.length > 1 ? ' ' + (i + 1) : ''}: ${WHY[c.why]}`)];
+      if (S(c.node).t !== 'x') parts.push(ln(`${mm(H(c.node))} ${sym}`));
+      if ((c.why === 'tan' || c.why === 'cot') && c.node.a.t === 'x') {
+        parts.push(ln(`${c.why === 'tan' ? 'cos' : 'sen'}(${xs}) = 0 per ${xs} = ${c.why === 'tan' ? 'π/2 + <i>k</i>π' : '<i>k</i>π'}, quindi ${xs} ≠ ${c.why === 'tan' ? 'π/2 + <i>k</i>π' : '<i>k</i>π'} &nbsp;(<i>k</i> ∈ ℤ)`));
+      } else if (c.why === 'tan' || c.why === 'cot') {
+        parts.push(ln(`Serve ${mm(H(c.node.a))} ≠ ${c.why === 'tan' ? 'π/2 + <i>k</i>π' : '<i>k</i>π'}; i valori di ${xs} esclusi sono quelli che soddisfano questa relazione.`));
+      } else if (nd.t === 'x') {
+        parts.push(ln(`<b>${c.type === 'ne0' ? `${xs} ≠ 0` : c.type === 'ge0' ? `${xs} ≥ 0` : `${xs} &gt; 0`}</b>`));
+      } else {
+        const s = solveNode(nd);
+        if (c.type === 'ne0') {
+          parts.push(ln(`Risolvo l’equazione associata ${mm(H(nd))} = 0:`), ...s.lines);
+          parts.push(ln(`<b>${s.sols.length ? s.sols.map(v => `${xs} ≠ ${P(v)}`).join(' ; ') : 'nessun valore da escludere'}</b>`));
+        } else {
+          parts.push(ln(`Risolvo l’equazione associata ${mm(H(nd))} = 0:`), ...s.lines);
+          parts.push(ln(`Studio il segno di ${mm(H(nd))}: <b>${mm(H(nd))} ${c.type === 'ge0' ? '≥' : '&gt;'} 0 &nbsp;per&nbsp; ${solutionText(nd, c.type === 'ge0')}</b>`));
+        }
+      }
+      L.push(`<div class="cb">${parts.join('')}</div>`);
+    });
+    const iv = r.W.kind === 'all' ? r.intervals : r.domWin;
+    L.push(`<div class="cb">${head('Metto a sistema le condizioni')}${ln(`<b>D = ${iv.map(ivStr).join(' ∪ ')}</b>${r.W.kind !== 'all' ? ' <span class="note">(nell’intervallo mostrato)</span>' : ''}`)}</div>`);
+    return L.join('');
+  }
+
+  // ---------- 2. simmetrie ----------
+  function symmetryCalc(r) {
+    const L = [];
+    const fneg = subst(r.f, Mul([N(-1), X]));
+    const sNeg = S(fneg), sF = S(r.f);
+    L.push(ln(`Sostituisco <i>x</i> con −<i>x</i>:`));
+    L.push(ln(`<i>f</i>(−<i>x</i>) = ${mm(H(tidy(fneg)))}`));
+    if (H(sNeg) !== H(tidy(fneg))) L.push(ln(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= ${mm(H(sNeg))}`));
+    let asym = false;
+    for (let k = 0; k < 200; k++) { const x = 0.0731 + k * 0.0497; if (Number.isFinite(r.F(x)) !== Number.isFinite(r.F(-x))) { asym = true; break; } }
+    if (r.pari) L.push(ln(`Si ottiene proprio <i>f</i>(<i>x</i>) = ${mm(H(sF))}. Dunque <i>f</i>(−<i>x</i>) = <i>f</i>(<i>x</i>): <b>funzione pari</b>.`));
+    else if (r.dispari) L.push(ln(`Si ottiene −<i>f</i>(<i>x</i>) = ${mm(H(S(Mul([N(-1), r.f]))))}. Dunque <i>f</i>(−<i>x</i>) = −<i>f</i>(<i>x</i>): <b>funzione dispari</b>.`));
+    else if (asym) L.push(ln('Il dominio non è simmetrico rispetto all’origine (se <i>x</i> è nel dominio, −<i>x</i> non lo è): <b>né pari né dispari</b>.'));
+    else {
+      const t = [0.5, 1, 2, 1.5, 3].find(v => Number.isFinite(r.F(v)) && Number.isFinite(r.F(-v)) && Math.abs(r.F(v) - r.F(-v)) > 1e-9 && Math.abs(r.F(v) + r.F(-v)) > 1e-9);
+      L.push(ln(`Il risultato non coincide né con <i>f</i>(<i>x</i>) né con −<i>f</i>(<i>x</i>)${t !== undefined ? `: per esempio <i>f</i>(${P(t)}) = ${P(r.F(t))} e <i>f</i>(−${P(t)}) = ${P(r.F(-t))}` : ''}. <b>Né pari né dispari</b>.`));
+    }
+    if (r.period) L.push(ln(`Funzioni goniometriche: provo a traslare di ${P(r.period)}: <i>f</i>(<i>x</i> + ${P(r.period)}) = <i>f</i>(<i>x</i>) per ogni <i>x</i> (controllo fatto su molti punti). Periodo <b><i>T</i> = ${P(r.period)}</b>.`));
+    return L.join('');
+  }
+
+  // ---------- ordinate ----------
+  function ordinateLine(node, label, x0) {
+    const y = label === 'f' ? null : null;
+    void y;
+    const sub = tidy(subst(node, valNode(x0)));
+    const val = node === null ? '' : '';
+    void val;
+    return sub;
+  }
+  function evalLine(r, which, x0) {
+    const G = which === 'f' ? r.F : which === 'd1' ? r.F1 : r.F2;
+    const node = which === 'f' ? r.f : which === 'd1' ? r.d1n : r.d2n;
+    const lab = which === 'f' ? '<i>f</i>' : which === 'd1' ? '<i>f</i> ′' : '<i>f</i> ″';
+    const y = G(x0);
+    const body = H(subst(node, valNode(x0)));
+    const v = P(y);
+    return `${lab}(${P(x0)}) = ${mm(body)}${body === v ? '' : ' = <b>' + v + '</b>'}`;
+  }
+
+  // ---------- 3. intersezioni ----------
+  function interceptsCalc(r) {
+    const L = [];
+    L.push(head('Con l’asse <i>y</i> (<i>x</i> = 0)'));
+    if (r.yInt) L.push(ln(evalLine(r, 'f', 0)));
+    else L.push(ln('0 non appartiene al dominio: il grafico non incontra l’asse <i>y</i>.'));
+    L.push(head('Con l’asse <i>x</i> (<i>y</i> = 0)'));
+    const sf = S(r.f);
+    L.push(ln(`Risolvo <i>f</i>(<i>x</i>) = 0, cioè ${mm(H(sf))} = 0`));
+    const s = solveNode(sf);
+    L.push(...s.lines);
+    if (s.sols.length) {
+      const ok = s.sols.filter(v => r.inDom(v) && r.inW(v)), no = s.sols.filter(v => !r.inDom(v));
+      if (no.length) L.push(ln(`Non accettabili (fuori dal dominio): ${no.map(v => `${xs} = ${P(v)}`).join(' ; ')}.`));
+      L.push(ln(`<b>${ok.length ? 'Punti: ' + ok.map(v => `(${P(v)}; 0)`).join(' , ') : 'Nessuna intersezione con l’asse x'}</b>`));
+    } else L.push(ln('<b>Nessuna intersezione con l’asse <i>x</i></b>.'));
+    return block('', L);
+  }
+
+  // ---------- tabelle dei segni a più righe ----------
+  function addFactors(rows, nd, type) {
+    const fs = nd.t === 'mul' ? nd.fs : [nd];
+    fs.forEach(f => {
+      if (f.t === 'num') { if (f.v < 0) rows.push({ label: H(f), node: f, type }); return; }
+      const p = toPoly(f);
+      if (p && pClean(p.slice()).length >= 4) {
+        const fp = factorPoly(p);
+        if (fp && fp.facs.length + (fp.rem.length > 1 ? 1 : 0) >= 2) {
+          fp.facs.forEach(({ r, m }) => { const b = r === 0 ? X : Add([X, valNode(-r)]); const nn = m > 1 ? Pow(b, N(m)) : b; rows.push({ label: H(nn), node: nn, type }); });
+          if (fp.rem.length === 1 && fp.rem[0] < 0) rows.push({ label: H(N(fp.rem[0])), node: N(fp.rem[0]), type });
+          if (fp.rem.length > 1) { const q = fromPoly(fp.rem); rows.push({ label: H(q), node: q, type }); }
+          return;
+        }
+      }
+      rows.push({ label: H(f), node: f, type });
+    });
+  }
+  function rowsFor(node) {
+    const rows = [];
+    if (node.t === 'div') { addFactors(rows, node.a, 'num'); addFactors(rows, node.b, 'den'); }
+    else addFactors(rows, node, 'plain');
+    return rows;
+  }
+  function tableData(r, node, kind) {
+    const resG = kind === 'f' ? r.F : kind === 'd1' ? r.F1 : r.F2;
+    let rows = rowsFor(node);
+    let pts = [];
+    rows.forEach(rw => pts.push(...zerosOf(rw.node)));
+    pts.push(...r.boundXs, ...r.excl);
+    if (kind === 'f') pts.push(...r.zeros);
+    if (kind === 'd1') pts.push(...r.critical, ...r.nonDiff.map(n => n.x));
+    if (kind === 'd2') pts.push(...r.z2, ...r.nonDiff.map(n => n.x), ...r.flex.map(e => e.x));
+    pts = uniq(pts);
+    const part = partition(pts, r.W.lo, r.W.hi);
+    const mark = (G, x) => { if (!Number.isFinite(x)) return null; const y = G(x); return !Number.isFinite(y) ? 'nd' : Math.abs(y) < 1e-9 ? '0' : null; };
+    const rowSigns = rows.map(rw => { const G = C(rw.node); return { segs: part.mids.map(m => signAt(G, m)), marks: part.ps.map(p => { const k = mark(G, p); return k === 'nd' ? null : k; }) }; });
+    const res = {
+      segs: part.mids.map(m => (r.inDom(m) && Number.isFinite(resG(m)) ? signAt(resG, m) : 'out')),
+      marks: part.ps.map(p => { if (!Number.isFinite(p)) return null; if (!r.inDom(p)) return 'nd'; const y = resG(p); if (!Number.isFinite(y)) return 'nd'; return Math.abs(y) < 1e-9 ? '0' : null; })
+    };
+    return { rows, part, rowSigns, res, resG };
+  }
+  function tableHTML(r, node, kind) {
+    const td = tableData(r, node, kind);
+    const { rows, part, rowSigns, res } = td;
+    const n = part.mids.length;
+    const lab = kind === 'f' ? '<i>f</i>(<i>x</i>)' : kind === 'd1' ? '<i>f</i> ′(<i>x</i>)' : '<i>f</i> ″(<i>x</i>)';
+    const cell = (s, k, marks, last) => {
+      const cls = s === '+' ? 'p' : s === '−' ? 'm' : s === '0' ? 'z' : 'o';
+      const mk = m => (m === '0' ? '<span class="mk">0</span>' : m === 'nd' ? '<span class="mk nd">∄</span>' : '');
+      return `<div class="sg ${cls}${last ? ' last' : ''}">${s === 'out' ? '∄' : s}${mk(marks[k])}${last && marks[k + 1] ? mk(marks[k + 1]).replace('class="mk', 'class="mk r') : ''}</div>`;
+    };
+    let h = `<div class="chart"><div class="stbl" style="grid-template-columns:max-content repeat(${n}, minmax(${n > 6 ? 56 : 66}px, 1fr))"><div class="rl h"></div>`;
+    part.mids.forEach((_, k) => { h += `<div class="lab"><span class="bl">${xlab(part.ps[k])}</span>${k === n - 1 ? `<span class="br">${xlab(part.ps[k + 1])}</span>` : ''}</div>`; });
+    const multi = rows.length > 1;
+    if (multi) rows.forEach((rw, i) => {
+      h += `<div class="rl m"><span>${rw.label}</span>${rw.type === 'den' ? ' <small>(den.)</small>' : rw.type === 'num' && rows.some(q => q.type === 'den') ? ' <small>(num.)</small>' : ''}</div>`;
+      part.mids.forEach((_, k) => { h += cell(rowSigns[i].segs[k], k, rowSigns[i].marks, k === n - 1); });
+    });
+    h += `<div class="rl m res"><span>${lab}</span></div>`;
+    part.mids.forEach((_, k) => { h += cell(res.segs[k], k, res.marks, k === n - 1).replace('class="sg', 'class="sg res'); });
+    if (kind !== 'f') {
+      const ext = r.extrema, fl = r.flex;
+      h += `<div class="rl m"><span><i>f</i>(<i>x</i>)</span></div>`;
+      part.mids.forEach((_, k) => {
+        const s = res.segs[k];
+        const g = s === 'out' ? '' : kind === 'd1' ? (s === '+' ? '↗' : s === '−' ? '↘' : '→') : (s === '+' ? '∪' : s === '−' ? '∩' : '—');
+        let pl = '';
+        const x = part.ps[k];
+        if (Number.isFinite(x)) {
+          if (kind === 'd1') { const e = ext.find(q => Math.abs(q.x - x) < 1e-8); if (e) pl = e.type === 'max' ? 'max' : 'min'; }
+          else if (fl.some(q => Math.abs(q.x - x) < 1e-8)) pl = 'flesso';
+        }
+        h += `<div class="bh${k === n - 1 ? ' last' : ''}">${g}${pl ? `<span class="pl">${pl}</span>` : ''}</div>`;
+      });
+    }
+    h += '</div></div>';
+    return { html: h, td };
+  }
+
+  function signCalc(r) {
+    const sf = S(r.f);
+    const L = [];
+    const rows = rowsFor(sf);
+    L.push(ln(`Studio il segno di <i>f</i>(<i>x</i>) = ${mm(H(sf))}${sf.t === 'div' ? ': numeratore e denominatore separatamente, poi la regola dei segni.' : '.'}`));
+    rows.forEach(rw => {
+      const rel = '&gt;';
+      L.push(ln(`${mm(rw.label)} ${rel} 0 &nbsp;per&nbsp; ${solutionText(rw.node, false, r.W.lo, r.W.hi)}`));
+    });
+    const t = tableHTML(r, sf, 'f');
+    L.push(t.html);
+    const { part, res } = t.td;
+    L.push(ln(`<b><i>f</i>(<i>x</i>) &gt; 0 per ${signsText(part.ps, res.segs, '+')}</b>`));
+    L.push(ln(`<b><i>f</i>(<i>x</i>) &lt; 0 per ${signsText(part.ps, res.segs, '−')}</b>`));
+    return L.join('');
+  }
+
+  // ---------- 5. limiti ----------
+  const side = s => (s === '⁻' ? -1 : 1);
+  function subLim(node, at, sd) {
+    const G = C(node);
+    const L = at === Infinity ? T.limInf(G, 1) : at === -Infinity ? T.limInf(G, -1) : T.limAt(G, at, sd);
+    let zs = 0;
+    if (L.k === 'fin' && Math.abs(L.v) < 1e-9) {
+      const x = isFinite(at) ? at + sd * 1e-6 * Math.max(1, Math.abs(at)) : (at > 0 ? 1e6 : -1e6);
+      const y = G(x); zs = Math.abs(y) < 1e-14 ? 0 : Math.sign(y);
+    }
+    return { L, zs };
+  }
+  const lstr = o => (o.L.k === 'fin' ? (Math.abs(o.L.v) < 1e-9 && o.zs ? (o.zs > 0 ? '0⁺' : '0⁻') : o.L.p.s) : o.L.k === 'inf' ? (o.L.s > 0 ? '+∞' : '−∞') : 'non esiste');
+  const isZero = o => o.L.k === 'fin' && Math.abs(o.L.v) < 1e-9;
+  const isInfO = o => o.L.k === 'inf';
+  const pre = (at, sd) => `<span class="lim">lim<small><i>x</i>→${at === Infinity ? '+∞' : at === -Infinity ? '−∞' : P(at) + (sd < 0 ? '⁻' : '⁺')}</small></span>`;
+  const lead = p => { p = pClean(p.slice()); return { n: p.length - 1, c: p[p.length - 1] }; };
+  function hierarchy(node) {
+    const has = f => { let ok = false; (function w(n) { if (f(n)) ok = true; switch (n.t) { case 'add': n.ts.forEach(w); break; case 'mul': n.fs.forEach(w); break; case 'div': case 'pow': w(n.a); w(n.b); break; case 'fn': w(n.a); } })(node); return ok; };
+    const ex = has(n => n.t === 'pow' && hasX(n.b) && (n.a.t === 'const' || n.a.t === 'num')), lg = has(n => n.t === 'fn' && (n.n === 'ln' || n.n === 'log10')), pw = has(n => (n.t === 'pow' && hasX(n.a) && !hasX(n.b)) || n.t === 'x');
+    if (ex && pw) return 'Gerarchia degli infiniti: l’esponenziale cresce (o decresce) più in fretta di qualunque potenza di <i>x</i>, quindi prevale.';
+    if (lg && pw) return 'Gerarchia degli infiniti: ogni potenza di <i>x</i> prevale sul logaritmo.';
+    return '';
+  }
+
+  function limitNode(node, at, sd, out) {
+    const so = subLim(node, at, sd);
+    const infAt = !isFinite(at);
+    if (node.t === 'mul') {
+      const vars = node.fs.filter(f => hasX(f)), consts = node.fs.filter(f => !hasX(f));
+      if (vars.length === 1 && consts.length) { out.push(ln(`Il fattore costante ${mm(H(Mul(consts)))} esce dal limite.`)); return limitNode(vars[0], at, sd, out); }
+      if (vars.length >= 2) {
+        const parts = vars.map(f => ({ f, o: subLim(f, at, sd) }));
+        out.push(ln(`${pre(at, sd)} ${mm(parts.map(q => '(' + H(q.f) + ')').join('·'))} → ${mm(parts.map(q => '(' + lstr(q.o) + ')').join('·'))}`));
+        const hasZ = parts.some(q => isZero(q.o)), hasI = parts.some(q => isInfO(q.o));
+        if (hasZ && hasI) { out.push(ln('Forma indeterminata 0·∞.')); const h = hierarchy(node); if (h) out.push(note(h)); else out.push(note('Riscrivo il prodotto come quoziente per ricondurmi a 0/0 o ∞/∞.')); }
+        return so;
+      }
+    }
+    if (node.t === 'add') {
+      const parts = node.ts.map(f => ({ f, o: subLim(f, at, sd) }));
+      const poly = toPoly(node);
+      if (poly && infAt && pClean(poly.slice()).length > 1) {
+        const { n, c } = lead(poly);
+        out.push(ln(`Per <i>x</i> → ${at > 0 ? '+∞' : '−∞'} in un polinomio prevale il termine di grado massimo: ${pre(at, sd)} ${mm(H(fromPoly(poly)))} = ${pre(at, sd)} ${mm(H(Mul([N(c), n === 1 ? X : Pow(X, N(n))])))} = <b>${lstr(so)}</b>`));
+        return so;
+      }
+      out.push(ln(`${pre(at, sd)} ${mm(H(node))} → ${mm(parts.map(q => '(' + lstr(q.o) + ')').join(' + '))}`));
+      const pos = parts.some(q => isInfO(q.o) && q.o.L.s > 0), ng = parts.some(q => isInfO(q.o) && q.o.L.s < 0);
+      if (pos && ng) { out.push(ln('Forma indeterminata +∞ − ∞: raccolgo il termine che cresce più in fretta.')); const h = hierarchy(node); if (h) out.push(note(h)); }
+      return so;
+    }
+    if (node.t === 'div') {
+      const A = subLim(node.a, at, sd), B = subLim(node.b, at, sd), aS = lstr(A), bS = lstr(B);
+      out.push(ln(`${pre(at, sd)} ${frac(mm(H(node.a)), mm(H(node.b)))} → ${frac(aS, bS)}`));
+      const pa = toPoly(node.a), pb = toPoly(node.b);
+      if (isZero(A) && isZero(B)) {
+        out.push(ln('Forma indeterminata 0/0.'));
+        if (pa && pb) {
+          const fa = factorPoly(pa), fb = factorPoly(pb);
+          out.push(ln(`Scompongo: &nbsp;<i>N</i>(<i>x</i>) = ${mm(H(factorNode(fa)))}, &nbsp;<i>D</i>(<i>x</i>) = ${mm(H(factorNode(fb)))}`));
+          const sd2 = S(node);
+          out.push(ln(`Semplifico il fattore comune: ${mm(H(sd2))}`));
+          out.push(ln(`Ora sostituisco: ${mm(H(tidy(subst(sd2, valNode(at)))))}`));
+        } else { const h = hierarchy(node); out.push(note(h || 'Confronto gli ordini di infinitesimo di numeratore e denominatore.')); }
+      } else if (isInfO(A) && isInfO(B)) {
+        out.push(ln('Forma indeterminata ∞/∞.'));
+        if (pa && pb && infAt) {
+          const la = lead(pa), lb = lead(pb);
+          out.push(ln(`Contano solo i termini di grado massimo: grado di <i>N</i> = ${la.n}, grado di <i>D</i> = ${lb.n}.`));
+          out.push(ln(`${pre(at, sd)} ${frac(mm(H(Mul([N(la.c), la.n === 1 ? X : Pow(X, N(la.n))]))), mm(H(Mul([N(lb.c), lb.n === 1 ? X : Pow(X, N(lb.n))]))))} ${la.n > lb.n ? '(grado maggiore al numeratore ⇒ ∞)' : la.n === lb.n ? `= ${frac(P(la.c), P(lb.c))} (stesso grado ⇒ rapporto dei coefficienti)` : '(grado maggiore al denominatore ⇒ 0)'}`));
+        } else { const h = hierarchy(node); out.push(note(h || 'Confronto gli ordini di infinito di numeratore e denominatore.')); }
+      } else if (isZero(B) && !isZero(A)) {
+        out.push(ln(`Il denominatore tende a 0 ${B.zs > 0 ? 'da valori positivi' : 'da valori negativi'} e il numeratore a ${aS}: il quoziente diverge.`));
+      }
+      return so;
+    }
+    const arg = node.t === 'fn' ? node.a : node.t === 'pow' ? (hasX(node.a) ? node.a : node.b) : null;
+    if (arg && hasX(arg)) {
+      const A = subLim(arg, at, sd);
+      out.push(ln(`${pre(at, sd)} ${mm(H(node))}: l’argomento ${mm(H(arg))} tende a <b>${lstr(A)}</b>.`));
+    } else if (node.t === 'x') out.push(ln(`${pre(at, sd)} <i>x</i> = ${xlab(at)}`));
+    return so;
+  }
+  function limitsCalc(r) {
+    const L = [];
+    const lims = r.limits.filter(l => !isFinite(l.at) || r.inW(l.at));
+    if (!lims.length) return ln('Il dominio è chiuso e limitato: non servono limiti agli estremi.');
+    lims.forEach(l => {
+      const out = [], sd = side(l.side);
+      limitNode(r.f, l.at, sd, out);
+      out.push(ln(`<b>${pre(l.at, sd)} <i>f</i>(<i>x</i>) = ${l.L.k === 'ne' ? 'non esiste' : l.L.k === 'fin' ? l.L.p.s : (l.L.s > 0 ? '+∞' : '−∞')}</b>`));
+      L.push(block('', out));
+    });
+    return L.join('');
+  }
+  function asymptotesCalc(r) {
+    const L = [];
+    const asy = r.asymptotes.filter(a => a.type !== 'verticale' || r.inW(a.x));
+    if (!asy.length) return block('Asintoti', [ln('Né i limiti agli estremi del dominio né quelli all’infinito danno asintoti: <b>nessun asintoto</b>.')]);
+    asy.forEach(a => {
+      const out = [];
+      if (a.type === 'verticale') {
+        out.push(ln(`Il limite per <i>x</i> → ${P(a.x)} è infinito: <b>asintoto verticale <i>x</i> = ${P(a.x)}</b>.`));
+      } else if (a.type === 'orizzontale') {
+        out.push(ln(`Il limite all’infinito è finito (${a.side === 0 ? 'per <i>x</i> → ±∞' : a.side > 0 ? 'per <i>x</i> → +∞' : 'per <i>x</i> → −∞'}), vale ${P(a.q)}: <b>asintoto orizzontale <i>y</i> = ${P(a.q)}</b>.`));
+      } else {
+        out.push(ln(`<i>f</i> tende a ∞ come una retta: cerco <i>y</i> = <i>mx</i> + <i>q</i> con`));
+        out.push(ln(`<i>m</i> = lim <i>f</i>(<i>x</i>)/<i>x</i> = <b>${P(a.m)}</b>`));
+        out.push(ln(`<i>q</i> = lim [<i>f</i>(<i>x</i>) − <i>m</i><i>x</i>] = <b>${P(a.q)}</b>`));
+        const sf = S(r.f);
+        const pa = sf.t === 'div' ? toPoly(sf.a) : null, pb = sf.t === 'div' ? toPoly(sf.b) : null;
+        if (pa && pb) {
+          const { q, r: rem } = pDivRem(pa, pb);
+          out.push(ln(`Con la divisione di polinomi: <i>N</i>(<i>x</i>) : <i>D</i>(<i>x</i>) dà quoziente ${mm(H(fromPoly(q)))} e resto ${mm(H(fromPoly(rem)))}, quindi <i>f</i>(<i>x</i>) = ${mm(H(fromPoly(q)))} + ${frac(mm(H(fromPoly(rem))), mm(H(fromPoly(pb))))} e il resto tende a 0.`));
+        }
+        out.push(ln(`<b>Asintoto obliquo ${a.eq.replace(/x/g, '<i>x</i>').replace(/^y/, '<i>y</i>')}</b> (${a.side === 0 ? 'per <i>x</i> → ±∞' : a.side > 0 ? 'per <i>x</i> → +∞' : 'per <i>x</i> → −∞'}).`));
+      }
+      L.push(block('', out));
+    });
+    const d = r.discont.filter(q => r.inW(q.x));
+    if (d.length) {
+      const out = [head('Punti di discontinuità')];
+      d.forEach(q => {
+        const Ls = r.limits.find(l => Math.abs(l.at - q.x) < 1e-9 && l.side === '⁻'), Rs = r.limits.find(l => Math.abs(l.at - q.x) < 1e-9 && l.side === '⁺');
+        const t = l => (l ? (l.L.k === 'fin' ? l.L.p.s : l.L.k === 'inf' ? (l.L.s > 0 ? '+∞' : '−∞') : '∄') : '—');
+        out.push(ln(`<i>x</i> = ${P(q.x)}: limite sinistro ${t(Ls)}, limite destro ${t(Rs)} ⇒ ${q.kind === 3 ? 'i due limiti sono finiti e uguali: <b>discontinuità eliminabile (3ª specie)</b>' : q.kind === 1 ? 'limiti finiti diversi: <b>salto (1ª specie)</b>' : 'almeno un limite infinito: <b>2ª specie</b>'}`));
+      });
+      L.push(block('', out));
+    }
+    return L.join('');
+  }
+
+  // ---------- derivate ----------
+  const isTrivial = n => n.t === 'x' || n.t === 'num' || n.t === 'const' || n.t === 'raw';
+  const dd = n => tidy(D(n));
+  function rule(n) {
+    switch (n.t) {
+      case 'x': return '(<i>x</i>)′ = 1';
+      case 'add': return 'Derivata di una somma: si deriva termine per termine.';
+      case 'mul': {
+        const vs = n.fs.filter(hasX);
+        if (vs.length >= 2) return vs.length === 2 ? 'Regola del prodotto: (<i>u</i>·<i>v</i>)′ = <i>u</i>′·<i>v</i> + <i>u</i>·<i>v</i>′' : 'Regola del prodotto: derivo un fattore alla volta e moltiplico gli altri.';
+        return 'Un fattore costante esce dalla derivata: (<i>c</i>·<i>u</i>)′ = <i>c</i>·<i>u</i>′';
+      }
+      case 'div':
+        if (hasX(n.a) && hasX(n.b)) return 'Regola del quoziente: (<i>u</i>/<i>v</i>)′ = (<i>u</i>′·<i>v</i> − <i>u</i>·<i>v</i>′)/<i>v</i>²';
+        if (hasX(n.b)) return 'Quoziente con numeratore costante: (<i>c</i>/<i>v</i>)′ = −<i>c</i>·<i>v</i>′/<i>v</i>²';
+        return 'Denominatore costante: esce dalla derivata.';
+      case 'pow':
+        if (!hasX(n.b)) return n.a.t === 'x' ? 'Derivata della potenza: (<i>x</i><sup><i>n</i></sup>)′ = <i>n</i>·<i>x</i><sup><i>n</i>−1</sup>' : 'Funzione composta: (<i>u</i><sup><i>n</i></sup>)′ = <i>n</i>·<i>u</i><sup><i>n</i>−1</sup>·<i>u</i>′';
+        if (!hasX(n.a)) return n.a.t === 'const' && n.a.n === 'e' ? (n.b.t === 'x' ? '(<i>e</i><sup><i>x</i></sup>)′ = <i>e</i><sup><i>x</i></sup>' : 'Funzione composta: (<i>e</i><sup><i>u</i></sup>)′ = <i>e</i><sup><i>u</i></sup>·<i>u</i>′') : 'Esponenziale: (<i>a</i><sup><i>u</i></sup>)′ = <i>a</i><sup><i>u</i></sup>·ln <i>a</i>·<i>u</i>′';
+        return 'Base e esponente variabili: uso (<i>u</i><sup><i>v</i></sup>)′ = <i>u</i><sup><i>v</i></sup>·[<i>v</i>′·ln <i>u</i> + <i>v</i>·<i>u</i>′/<i>u</i>]';
+      case 'fn': {
+        const c = n.a.t === 'x';
+        const F = { sin: 'cos', cos: '−sen', tan: '1/cos²', cot: '−1/sen²', ln: '1/', sqrt: '1/(2√', abs: '' };
+        const base = { sin: `(sen <i>u</i>)′ = cos <i>u</i>${c ? '' : '·<i>u</i>′'}`, cos: `(cos <i>u</i>)′ = −sen <i>u</i>${c ? '' : '·<i>u</i>′'}`, tan: `(tg <i>u</i>)′ = ${c ? '' : '<i>u</i>′·'}1/cos²<i>u</i>`, cot: `(cotg <i>u</i>)′ = −${c ? '' : '<i>u</i>′·'}1/sen²<i>u</i>`, asin: '(arcsen <i>u</i>)′ = <i>u</i>′/√(1 − <i>u</i>²)', acos: '(arccos <i>u</i>)′ = −<i>u</i>′/√(1 − <i>u</i>²)', atan: '(arctg <i>u</i>)′ = <i>u</i>′/(1 + <i>u</i>²)', sqrt: '(√<i>u</i>)′ = <i>u</i>′/(2√<i>u</i>)', cbrt: '(∛<i>u</i>)′ = <i>u</i>′/(3∛<i>u</i>²)', abs: '(|<i>u</i>|)′ = <i>u</i>′·|<i>u</i>|/<i>u</i>', ln: '(ln <i>u</i>)′ = <i>u</i>′/<i>u</i>', log10: '(log <i>u</i>)′ = <i>u</i>′/(<i>u</i>·ln 10)' }[n.n];
+        void F;
+        return (c ? '' : 'Funzione composta: ') + base;
+      }
+      default: return '';
+    }
+  }
+  function pieces(n) {
+    switch (n.t) {
+      case 'add': return n.ts.filter(hasX).map(t => ['', t]);
+      case 'mul': return n.fs.filter(hasX).map((t, i) => [n.fs.filter(hasX).length > 1 ? (i === 0 ? '<i>u</i>' : n.fs.filter(hasX).length === 2 ? '<i>v</i>' : '<i>v</i>' + (i + 1)) : '', t]);
+      case 'div': return [hasX(n.a) ? ['<i>u</i>', n.a] : null, hasX(n.b) ? ['<i>v</i>', n.b] : null].filter(Boolean);
+      case 'pow': return !hasX(n.b) ? (n.a.t === 'x' ? [] : [['<i>u</i>', n.a]]) : !hasX(n.a) ? (n.b.t === 'x' ? [] : [['<i>u</i>', n.b]]) : [['<i>u</i>', n.a], ['<i>v</i>', n.b]];
+      case 'fn': return n.a.t === 'x' ? [] : [['<i>u</i>', n.a]];
+      default: return [];
+    }
+  }
+  function derivCalc(node, simp, label, simpHTML, okSym) {
+    const L = [];
+    L.push(ln(`Derivo ${label}(<i>x</i>) = ${mm(H(node))}`));
+    const rl = rule(node);
+    if (rl) L.push(note(rl));
+    const ps = pieces(node);
+    ps.forEach(([nm, pc]) => {
+      const dp = dd(pc);
+      const nameU = nm ? `${nm} = ` : '';
+      const nameD = nm ? `${nm}′ = ` : `(${H(pc)})′ = `;
+      L.push(ln(`${nameU}${nm ? mm(H(pc)) : ''}${nm ? ' &nbsp;⇒&nbsp; ' : ''}${nameD}${mm(H(dp))}`, 'sub'));
+      if (!isTrivial(pc) && !(toPoly(pc))) {
+        const rr = rule(pc);
+        if (rr) L.push(note(rr));
+        const inner = pieces(pc);
+        inner.slice(0, 3).forEach(([n2, p2]) => { if (!isTrivial(p2) && !toPoly(p2)) return; if (n2) L.push(ln(`${n2} = ${mm(H(p2))} ⇒ ${n2}′ = ${mm(H(dd(p2)))}`, 'sub2')); });
+      }
+    });
+    const raw = tidy(D(node));
+    L.push(ln(`Sostituisco: &nbsp;${label}′(<i>x</i>) = ${mm(H(raw))}`));
+    if (okSym && H(raw) !== simpHTML) L.push(ln(`Semplifico: &nbsp;${label}′(<i>x</i>) = ${mm(simpHTML)}`));
+    return L;
+  }
+  const NOTE_FIX = arr => arr.map(x => (typeof x === 'string' ? x : '')).filter(Boolean);
+
+  function firstCalc(r) {
+    const L = [];
+    L.push(...derivCalc(r.f, r.d1n, '<i>f</i>', r.d1HTML, r.d1ok).map(x => x));
+    // equazione f' = 0
+    L.push(head('Punti stazionari: <i>f</i> ′(<i>x</i>) = 0'));
+    const s = solveNode(r.d1n);
+    L.push(...s.lines);
+    if (s.sols.length) {
+      const ok = s.sols.filter(v => r.inDom(v) && Number.isFinite(r.F(v))), no = s.sols.filter(v => !ok.includes(v));
+      if (no.length) L.push(ln(`Non accettabili (fuori dal dominio): ${no.map(v => `${xs} = ${P(v)}`).join(' ; ')}.`));
+    }
+    // segno
+    L.push(head('Segno di <i>f</i> ′(<i>x</i>)'));
+    const t = tableHTML(r, S(r.d1n), 'd1');
+    L.push(`<div class="cl">${t.html}</div>`);
+    const { part, res } = t.td;
+    L.push(ln(`<b><i>f</i> ′ &gt; 0 (<i>f</i> crescente) per ${signsText(part.ps, res.segs, '+')}</b>`));
+    L.push(ln(`<b><i>f</i> ′ &lt; 0 (<i>f</i> decrescente) per ${signsText(part.ps, res.segs, '−')}</b>`));
+    const ext = r.extrema.filter(e => r.inW(e.x));
+    if (ext.length) {
+      L.push(head('Ordinate degli estremi'));
+      ext.forEach(e => L.push(ln(`${e.type === 'max' ? 'Massimo' : 'Minimo'}: ${mm(evalLine(r, 'f', e.x))}`)));
+    }
+    return L.join('');
+  }
+  function secondCalc(r) {
+    const L = [];
+    if (!r.d2ok) return ln('La derivata seconda simbolica non ha superato il controllo: lo studio usa quella numerica.');
+    L.push(...derivCalc(r.d1n, r.d2n, '<i>f</i> ′', r.d2HTML, r.d2ok));
+    if (r.d2zero) { L.push(ln('<b>La derivata seconda è nulla ovunque: nessuna concavità, nessun flesso.</b>')); return L.join(''); }
+    L.push(head('<i>f</i> ″(<i>x</i>) = 0'));
+    const s = solveNode(r.d2n);
+    L.push(...s.lines);
+    L.push(head('Segno di <i>f</i> ″(<i>x</i>)'));
+    const t = tableHTML(r, S(r.d2n), 'd2');
+    L.push(`<div class="cl">${t.html}</div>`);
+    const { part, res } = t.td;
+    L.push(ln(`<b><i>f</i> ″ &gt; 0 (concava verso l’alto ∪) per ${signsText(part.ps, res.segs, '+')}</b>`));
+    L.push(ln(`<b><i>f</i> ″ &lt; 0 (concava verso il basso ∩) per ${signsText(part.ps, res.segs, '−')}</b>`));
+    const fl = r.flex.filter(e => r.inW(e.x));
+    if (fl.length) {
+      L.push(head('Ordinate dei flessi'));
+      fl.forEach(e => L.push(ln(`Flesso: ${mm(evalLine(r, 'f', e.x))}`)));
+    }
+    return L.join('');
+  }
+
+  function build(r) {
+    WIN = r;
+    const safe = (fn, label) => { try { return fn(r); } catch (e) { console.error(label, e); return ln('Per questo punto non riesco a scrivere i passaggi: il risultato qui sopra resta valido.', 'nt'); } };
+    return {
+      domain: safe(domainCalc, 'domain'), symmetry: safe(symmetryCalc, 'symmetry'), intercepts: safe(interceptsCalc, 'intercepts'),
+      sign: safe(signCalc, 'sign'), limits: safe(limitsCalc, 'limits') + safe(asymptotesCalc, 'asym'),
+      first: safe(firstCalc, 'first'), second: safe(secondCalc, 'second')
+    };
+  }
+  void NOTE_FIX; void ordinateLine;
+  return { build, tidy, subst, solveNode };
+})();
+if (typeof module !== 'undefined') module.exports = Work;
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const P = v => Studio.pretty(v).s;
+  const Pc = v => P(v).replace('≈ ', '≈');
+  const pt = (x, y) => `(${Pc(x)}; ${Pc(y)})`;
+  let res = null;
+
+  // ---------- tastiera ed esempi ----------
+  const KEYS = [['x', 'x'], ['x²', '^2'], ['^', '^'], ['√', 'sqrt('], ['ln', 'ln('], ['eˣ', 'e^('], ['|x|', '|'], ['(', '('], [')', ')'], ['/', '/'], ['π', 'π'], ['sen', 'sen('], ['cos', 'cos(']];
+  const EX = ['(x^2 - 3)/(x - 2)', 'x*e^(-x)', 'ln(x)/x', 'x^3/(x^2 - 1)', 'sqrt(x^2 - 4)', '|x^2 - 4|', 'x^2*e^x', 'e^(1/x)', '(x^2 - 4x + 3)/(x - 3)', 'cbrt(x)', 'sen(x) + cos(x)', 'arctg(x)'];
+  const inp = $('fn');
+  KEYS.forEach(([lab, ins]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'key'; b.textContent = lab;
+    b.addEventListener('click', () => {
+      const s = inp.selectionStart ?? inp.value.length, e = inp.selectionEnd ?? s;
+      inp.value = inp.value.slice(0, s) + ins + inp.value.slice(e);
+      inp.focus(); const c = s + ins.length; inp.setSelectionRange(c, c);
+    });
+    $('keys').appendChild(b);
+  });
+  EX.forEach(ex => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = ex;
+    b.addEventListener('click', () => { inp.value = ex; run(); });
+    $('examples').appendChild(b);
+  });
+  $('t-calc').addEventListener('change', () => document.querySelectorAll('details.calc').forEach(d => { d.hidden = !$('t-calc').checked; }));
+  $('form').addEventListener('submit', e => { e.preventDefault(); run(); });
+
+  // ---------- rendering dello studio ----------
+  const ivStr = iv => (iv.a === -Infinity ? '(' : iv.ac ? '[' : '(') + P(iv.a) + '; ' + P(iv.b) + (iv.b === Infinity ? ')' : iv.bc ? ']' : ')');
+  function kT(T) {
+    const s = P(T);
+    if (s === '1') return 'k';
+    if (s === 'π') return 'kπ';
+    if (/^\d+π$/.test(s)) return s.replace('π', 'kπ');
+    if (/^π\/\d+$/.test(s)) return 'kπ/' + s.split('/')[1];
+    return s + 'k';
+  }
+  function domainHTML(r) {
+    const iv = r.intervals;
+    const full = iv[0].a === -Infinity && iv[iv.length - 1].b === Infinity && iv.every((v, k) => k === 0 || (Math.abs(iv[k - 1].b - v.a) < 1e-12));
+    if (full && r.excl.length === 0) return '<div class="big">D = ℝ</div>';
+    if (full && r.W.kind === 'period') {
+      const ex = r.excl.filter(r.inW);
+      return `<div class="big">D: ${ex.map(e => `<i>x</i> ≠ ${Pc(e)} + ${kT(r.period)}`).join(', ')}, &nbsp;k ∈ ℤ</div>`;
+    }
+    if (full && r.excl.length <= 6) {
+      return `<div class="big">D = ℝ \\ {${r.excl.map(Pc).join('; ')}}</div><p class="note">cioè ${iv.map(ivStr).join(' ∪ ')}</p>`;
+    }
+    const list = (r.W.kind === 'all' ? iv : r.domWin).map(ivStr).join(' ∪ ');
+    const note = r.W.kind === 'period' ? `<p class="note">Mostro un periodo, [0; ${P(r.period)}); il dominio si ripete con periodo ${P(r.period)}.</p>`
+      : r.W.kind === 'many' ? '<p class="note">Il dominio ha infiniti tratti: mostro quelli tra −2π e 2π.</p>' : '';
+    return `<div class="big">D = ${list}</div>${note}`;
+  }
+
+  function chart(line, kind, r) {
+    const segs = line.segs, pts = line.pts, n = segs.length;
+    const lab = p => (p.edge ? (p.x === -Infinity ? '−∞' : p.x === Infinity ? '+∞' : Pc(p.x)) : Pc(p.x));
+    const mk = m => (m === '0' ? '<span class="mk">0</span>' : m === 'nd' ? '<span class="mk nd">∄</span>' : '');
+    const marks = { max: new Set(), min: new Set(), flex: new Set() };
+    if (kind === 'mono') r.extrema.forEach(e => marks[e.type].add(e.x.toFixed(9)));
+    if (kind === 'conc') r.flex.forEach(e => marks.flex.add(e.x.toFixed(9)));
+    let html = `<div class="chart"><div class="cg" style="grid-template-columns:repeat(${n}, minmax(${n > 6 ? 58 : 70}px, 1fr))">`;
+    // etichette
+    segs.forEach((s, k) => { html += `<div class="lab"><span class="bl">${lab(pts[k])}</span>${k === n - 1 ? `<span class="br">${lab(pts[k + 1])}</span>` : ''}</div>`; });
+    // segni
+    segs.forEach((s, k) => {
+      const cls = s.s === '+' ? 'p' : s.s === '−' ? 'm' : s.s === '0' ? 'z' : 'o';
+      const txt = s.s === 'out' ? '∄' : s.s;
+      const left = pts[k].edge ? (pts[k].m ? mk(pts[k].m) : '') : mk(pts[k].m);
+      const right = k === n - 1 && pts[k + 1].m ? mk(pts[k + 1].m).replace('class="mk', 'class="mk r') : '';
+      html += `<div class="sg ${cls}${k === n - 1 ? ' last' : ''}">${txt}${left}${right}</div>`;
+    });
+    if (kind !== 'sign') {
+      segs.forEach((s, k) => {
+        let g = '';
+        if (s.s !== 'out') g = kind === 'mono' ? (s.s === '+' ? '↗' : s.s === '−' ? '↘' : '→') : (s.s === '+' ? '∪' : s.s === '−' ? '∩' : '—');
+        const key = pts[k].x.toFixed ? pts[k].x.toFixed(9) : '';
+        let pl = '';
+        if (!pts[k].edge || isFinite(pts[k].x)) {
+          if (marks.max.has(key)) pl = '<span class="pl">max</span>';
+          else if (marks.min.has(key)) pl = '<span class="pl">min</span>';
+          else if (marks.flex.has(key)) pl = '<span class="pl">flesso</span>';
+        }
+        html += `<div class="bh${k === n - 1 ? ' last' : ''}">${g}${pl}</div>`;
+      });
+    }
+    html += '</div></div>';
+    const leg = kind === 'sign' ? '<span>linea continua: <i class="m">f</i> &gt; 0</span><span>tratteggiata: <i class="m">f</i> &lt; 0</span><span>∄: non definita</span>'
+      : kind === 'mono' ? '<span>+ : <i class="m">f ′</i> &gt; 0, crescente ↗</span><span>− : decrescente ↘</span>'
+      : '<span>+ : concavità verso l’alto ∪</span><span>− : verso il basso ∩</span>';
+    return html + `<div class="legend">${leg}</div>`;
+  }
+  const windowNote = r => r.W.kind === 'period' ? `<p class="note">Funzione periodica: mostro solo l’intervallo [0; ${P(r.period)}).</p>`
+    : r.W.kind === 'many' ? '<p class="note">Ci sono infiniti punti: mostro quelli tra −2π e 2π.</p>' : '';
+  const limHTML = (at, side) => `<span class="lim">lim<small><i>x</i>→${at === Infinity ? '+∞' : at === -Infinity ? '−∞' : Pc(at) + (side || '')}</small></span> <i>f</i>(<i>x</i>) = `;
+
+  function render(r) {
+    $('fx').innerHTML = `<i>f</i>(<i>x</i>) = ${r.fHTML}`;
+    const S = [];
+    let W = {};
+    try { W = Work.build(r); } catch (e) { console.error(e); }
+    const step = (n, title, body, calc) => S.push(`<section class="step"><h2><span class="n">${n}</span>${title}</h2>${body}${calc ? `<details class="calc" open${$('t-calc').checked ? '' : ' hidden'}><summary>Calcoli</summary>${calc}</details>` : ''}</section>`);
+
+    step(1, 'Dominio', domainHTML(r), W.domain);
+
+    let sym = r.pari ? '<div class="m">Pari: <i>f</i>(−<i>x</i>) = <i>f</i>(<i>x</i>), grafico simmetrico rispetto all’asse <i>y</i>.</div>'
+      : r.dispari ? '<div class="m">Dispari: <i>f</i>(−<i>x</i>) = −<i>f</i>(<i>x</i>), grafico simmetrico rispetto all’origine.</div>'
+      : '<div class="m">Né pari né dispari.</div>';
+    if (r.period) sym += `<div class="m">Periodica di periodo <i>T</i> = ${P(r.period)}.</div>`;
+    step(2, 'Simmetrie e periodicità', sym, W.symmetry);
+
+    const zs = r.zeros.filter(r.inW);
+    step(3, 'Intersezioni con gli assi', `<dl class="kv">
+      <dt>Asse y</dt><dd>${r.yInt ? pt(0, r.yInt.y) : 'nessuna: 0 non è nel dominio'}</dd>
+      <dt>Asse x</dt><dd>${zs.length ? zs.map(z => pt(z, 0)).join(', ') : 'nessuna: <i>f</i>(<i>x</i>) = 0 non ha soluzioni'}</dd></dl>${windowNote(r)}`, W.intercepts);
+
+    step(4, 'Segno', chart(r.signW, 'sign', r), W.sign);
+
+    // limiti
+    const lims = r.limits.filter(l => !isFinite(l.at) || r.inW(l.at));
+    const lsec = lims.length ? `<ul class="list">${lims.map(l => `<li>${limHTML(l.at, l.side)}${l.L.k === 'ne' ? 'non esiste' : l.L.k === 'nd' ? '?' : l.L.k === 'fin' ? l.L.p.s : (l.L.s > 0 ? '+∞' : '−∞')}</li>`).join('')}</ul>`
+      : '<p class="m">Il dominio è chiuso e limitato: non ci sono limiti da calcolare agli estremi.</p>';
+    const asy = r.asymptotes.filter(a => a.type !== 'verticale' || r.inW(a.x));
+    const sideTxt = a => a.side === 0 ? 'per <i>x</i> → ±∞' : a.side > 0 ? 'per <i>x</i> → +∞' : 'per <i>x</i> → −∞';
+    const asec = asy.length ? `<ul class="list">${asy.map(a => a.type === 'verticale'
+      ? `<li>Verticale: <i>x</i> = ${Pc(a.x)}${r.period ? ' + ' + kT(r.period) : ''}</li>`
+      : `<li>${a.type === 'orizzontale' ? 'Orizzontale' : 'Obliquo'}: ${a.eq.replace(/x/g, '<i>x</i>').replace(/^y/, '<i>y</i>')} <span class="note">(${sideTxt(a)})</span></li>`).join('')}</ul>`
+      : '<p class="m">Nessun asintoto.</p>';
+    const SPEC = { 1: '1ª specie (salto)', 2: '2ª specie', 3: '3ª specie (eliminabile)' };
+    const disc = r.discont.filter(d => r.inW(d.x));
+    const dsec = disc.length ? `<h3 class="note" style="margin-top:12px">Punti di discontinuità</h3><ul class="list">${disc.map(d => `<li><i>x</i> = ${Pc(d.x)}: ${SPEC[d.kind]}${d.kind === 3 ? `, il limite vale ${P(d.value)}` : ''}</li>`).join('')}</ul>` : '';
+    step(5, 'Limiti e asintoti', lsec + `<h3 class="note" style="margin-top:12px">Asintoti</h3>` + asec + dsec, W.limits);
+
+    // derivata prima
+    const ext = r.extrema.filter(e => r.inW(e.x));
+    const ND = r.nonDiff.filter(e => r.inW(e.x));
+    let d1 = `<div class="big"><i>f</i> ′(<i>x</i>) = ${r.d1HTML}</div>`;
+    if (!r.d1ok) d1 += '<p class="note">Attenzione: per questa funzione la derivata simbolica non ha superato il controllo numerico; lo studio usa la derivata numerica.</p>';
+    d1 += chart(r.monoW, 'mono', r);
+    d1 += ext.length ? `<ul class="list">${ext.map(e => `<li>${e.type === 'max' ? 'Massimo' : 'Minimo'} ${e.abs ? 'assoluto' : 'relativo'} ${e.type === 'max' ? 'M' : 'm'}${pt(e.x, e.y)}${e.endpoint ? '<span class="tag">estremo del dominio</span>' : ''}${e.nd ? `<span class="tag r">${e.nd.type}</span>` : ''}</li>`).join('')}</ul>`
+      : '<p class="m">Nessun massimo né minimo relativo.</p>';
+    if (ND.length) d1 += `<h3 class="note" style="margin-top:12px">Punti di non derivabilità</h3><ul class="list">${ND.map(n => `<li><i>x</i> = ${Pc(n.x)}: ${n.type}</li>`).join('')}</ul>`;
+    d1 += windowNote(r);
+    step(6, 'Derivata prima: crescenza ed estremi', d1, W.first);
+
+    // derivata seconda
+    const fl = r.flex.filter(e => r.inW(e.x));
+    let d2 = `<div class="big"><i>f</i> ″(<i>x</i>) = ${r.d2HTML || '<span class="note">calcolata numericamente</span>'}</div>`;
+    if (r.d2zero) d2 += '<p class="m">La derivata seconda è sempre nulla: il grafico è fatto di tratti rettilinei, quindi non c’è concavità.</p>';
+    else {
+      d2 += chart(r.concW, 'conc', r);
+      d2 += fl.length ? `<ul class="list">${fl.map(e => `<li>Flesso ${e.type} F${pt(e.x, e.y)}</li>`).join('')}</ul>` : '<p class="m">Nessun punto di flesso.</p>';
+      d2 += windowNote(r);
+    }
+    step(7, 'Derivata seconda: concavità e flessi', d2, W.second);
+
+    $('steps').innerHTML = S.join('');
+  }
+
+  // ---------- grafico ----------
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  let view = { x0: -10, x1: 10, y0: -6, y1: 6 }, Wpx = 600, Hpx = 400, dpr = 1;
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const X2px = x => (x - view.x0) / (view.x1 - view.x0) * Wpx;
+  const Y2px = y => (view.y1 - y) / (view.y1 - view.y0) * Hpx;
+  const px2X = p => view.x0 + p / Wpx * (view.x1 - view.x0);
+  const px2Y = p => view.y1 - p / Hpx * (view.y1 - view.y0);
+
+  function resize() {
+    const r = cv.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    const oldW = Wpx, oldH = Hpx;
+    Wpx = Math.max(10, r.width); Hpx = Math.max(10, r.height);
+    cv.width = Math.round(Wpx * dpr); cv.height = Math.round(Hpx * dpr);
+    if (oldW && oldH && res) { // conserva la scala
+      const cy = (view.y0 + view.y1) / 2, hy = (view.y1 - view.y0) / 2 * (Hpx / oldH) * (oldW / Wpx);
+      if (isFinite(hy) && hy > 0) { view.y0 = cy - hy; view.y1 = cy + hy; }
+    }
+    draw();
+  }
+  function niceStep(span, px) {
+    const raw = span / Math.max(1, px / 80);
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    for (const m of [1, 2, 5, 10]) if (m * p >= raw) return m * p;
+    return 10 * p;
+  }
+  const fmtTick = v => {
+    const a = Math.abs(v) < 1e-12 ? 0 : v;
+    let s = Number(a.toPrecision(10)).toString();
+    if (Math.abs(a) >= 1e5 || (Math.abs(a) < 1e-3 && a !== 0)) s = a.toExponential(1);
+    return s.replace('.', ',').replace('-', '−');
+  };
+
+  function fitView() {
+    if (!res) return;
+    let x0, x1;
+    if (res.period) { x0 = -res.period; x1 = res.period * 1.25; }
+    else {
+      const xs = [0, ...res.zeros, ...res.excl, ...res.boundXs, ...res.extrema.map(e => e.x), ...res.flex.map(e => e.x), ...res.nonDiff.map(e => e.x)].filter(x => Math.abs(x) <= 40);
+      let lo = Math.min(...xs), hi = Math.max(...xs);
+      if (res.W.kind === 'many') { lo = -2 * Math.PI; hi = 2 * Math.PI; }
+      const pad = Math.max(2.5, (hi - lo) * 0.35);
+      x0 = lo - pad; x1 = hi + pad;
+      if (x1 - x0 < 9) { const c = (x0 + x1) / 2; x0 = c - 4.5; x1 = c + 4.5; }
+    }
+    const vas = res.vertAs, skip = (x1 - x0) * 0.04, ys = [];
+    for (let k = 0; k <= 600; k++) {
+      const x = x0 + (x1 - x0) * k / 600;
+      if (vas.some(a => Math.abs(x - a) < skip)) continue;
+      const y = res.F(x); if (isFinite(y) && Math.abs(y) < 1e6) ys.push(y);
+    }
+    ys.sort((a, b) => a - b);
+    let y0 = ys.length ? ys[Math.floor(ys.length * 0.06)] : -5, y1 = ys.length ? ys[Math.floor(ys.length * 0.94)] : 5;
+    const keys = [0, ...res.extrema.map(e => e.y), ...res.flex.map(e => e.y), ...res.asymptotes.filter(a => a.type === 'orizzontale').map(a => a.q)];
+    if (res.yInt) keys.push(res.yInt.y);
+    keys.filter(v => isFinite(v) && Math.abs(v) < 1e5).forEach(v => { y0 = Math.min(y0, v); y1 = Math.max(y1, v); });
+    const padY = Math.max(1, (y1 - y0) * 0.22); y0 -= padY; y1 += padY;
+    if (y1 - y0 < 4) { const c = (y0 + y1) / 2; y0 = c - 2; y1 = c + 2; }
+    // unità uguali sui due assi quando possibile
+    const ux = Wpx / (x1 - x0), uy = Hpx / (y1 - y0);
+    if (uy / ux > 0.25 && uy / ux < 4) {
+      const u = Math.min(ux, uy);
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      x0 = cx - Wpx / u / 2; x1 = cx + Wpx / u / 2; y0 = cy - Hpx / u / 2; y1 = cy + Hpx / u / 2;
+    }
+    view = { x0, x1, y0, y1 };
+    draw();
+  }
+
+  function plot(G, color, width, dash, breaks) {
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash); ctx.lineJoin = 'round';
+    ctx.beginPath();
+    let pen = false, px0 = 0, py0 = 0, xp = 0;
+    for (let p = -1; p <= Wpx + 1; p += 0.5) {
+      const x = px2X(p), y = G(x);
+      if (!isFinite(y) || Math.abs(y) > 1e9) { pen = false; continue; }
+      let py = Y2px(y); py = Math.max(-Hpx * 4, Math.min(Hpx * 5, py));
+      if (pen && (breaks.some(a => a > xp && a <= x) || Math.abs(py - py0) > Hpx * 1.5)) pen = false;
+      if (!pen) { ctx.moveTo(p, py); pen = true; } else ctx.lineTo(p, py);
+      px0 = p; py0 = py; xp = x;
+    }
+    ctx.stroke(); ctx.restore();
+    void px0;
+  }
+
+  function draw() {
+    if (!cv.width) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, Wpx, Hpx);
+    ctx.fillStyle = css('--sheet'); ctx.fillRect(0, 0, Wpx, Hpx);
+    const sx = (res && res.period && (view.x1 - view.x0) < 60) ? piStep() : niceStep(view.x1 - view.x0, Wpx);
+    const sy = niceStep(view.y1 - view.y0, Hpx);
+    // quadretti
+    const minorX = sx / (sx === piStep() && res && res.period ? 2 : 5), minorY = sy / 5;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = css('--grid');
+    ctx.beginPath();
+    for (let x = Math.ceil(view.x0 / minorX) * minorX; x <= view.x1; x += minorX) { const p = Math.round(X2px(x)) + 0.5; ctx.moveTo(p, 0); ctx.lineTo(p, Hpx); }
+    for (let y = Math.ceil(view.y0 / minorY) * minorY; y <= view.y1; y += minorY) { const p = Math.round(Y2px(y)) + 0.5; ctx.moveTo(0, p); ctx.lineTo(Wpx, p); }
+    ctx.stroke();
+    ctx.strokeStyle = css('--grid-major');
+    ctx.beginPath();
+    for (let x = Math.ceil(view.x0 / sx) * sx; x <= view.x1; x += sx) { const p = Math.round(X2px(x)) + 0.5; ctx.moveTo(p, 0); ctx.lineTo(p, Hpx); }
+    for (let y = Math.ceil(view.y0 / sy) * sy; y <= view.y1; y += sy) { const p = Math.round(Y2px(y)) + 0.5; ctx.moveTo(0, p); ctx.lineTo(Wpx, p); }
+    ctx.stroke();
+    // assi
+    const ax = Math.min(Math.max(X2px(0), 0), Wpx), ay = Math.min(Math.max(Y2px(0), 0), Hpx);
+    ctx.strokeStyle = css('--axis'); ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(0, Math.round(ay) + 0.5); ctx.lineTo(Wpx, Math.round(ay) + 0.5); ctx.moveTo(Math.round(ax) + 0.5, 0); ctx.lineTo(Math.round(ax) + 0.5, Hpx); ctx.stroke();
+    ctx.fillStyle = css('--axis');
+    ctx.beginPath(); ctx.moveTo(Wpx, ay); ctx.lineTo(Wpx - 8, ay - 4); ctx.lineTo(Wpx - 8, ay + 4); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(ax, 0); ctx.lineTo(ax - 4, 8); ctx.lineTo(ax + 4, 8); ctx.fill();
+    ctx.font = 'italic 15px ' + css('--font-math');
+    ctx.fillText('x', Wpx - 14, ay - 8); ctx.fillText('y', ax + 8, 14);
+    // etichette
+    ctx.font = '11px ' + css('--font-mono'); ctx.fillStyle = css('--muted');
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const ly = ay + 4 > Hpx - 16 ? ay - 16 : ay + 4;
+    for (let x = Math.ceil(view.x0 / sx) * sx; x <= view.x1; x += sx) {
+      if (Math.abs(x) < sx / 2) continue;
+      const lab = res && res.period && sx === piStep() ? Studio.pretty(x, 1e-6).s : fmtTick(x);
+      ctx.fillText(lab, X2px(x), ly);
+    }
+    ctx.textAlign = ax > Wpx - 40 ? 'right' : 'left'; ctx.textBaseline = 'middle';
+    const lx = ax > Wpx - 40 ? ax - 5 : ax + 5;
+    for (let y = Math.ceil(view.y0 / sy) * sy; y <= view.y1; y += sy) { if (Math.abs(y) < sy / 2) continue; ctx.fillText(fmtTick(y), lx, Y2px(y)); }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    if (!res) return;
+
+    const red = css('--red');
+    // asintoti
+    if ($('t-as').checked) {
+      ctx.save(); ctx.strokeStyle = red; ctx.lineWidth = 1.3; ctx.setLineDash([6, 5]);
+      ctx.font = '13px ' + css('--font-math'); ctx.fillStyle = red;
+      for (const a of res.vertAs) {
+        if (a < view.x0 || a > view.x1) continue;
+        const p = X2px(a); ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, Hpx); ctx.stroke();
+      }
+      if (!res.period) res.vertAs.filter(a => a > view.x0 && a < view.x1).slice(0, 6).forEach(a => ctx.fillText('x = ' + P(a).replace('≈ ', '≈'), X2px(a) + 5, 16));
+      for (const a of res.asymptotes) {
+        if (a.type === 'verticale') continue;
+        const xa = a.side < 0 ? view.x0 : a.side > 0 ? Math.max(view.x0, Math.min(view.x1, 0)) : view.x0;
+        const xb = a.side < 0 ? Math.min(view.x1, Math.max(view.x0, 0)) : view.x1;
+        ctx.beginPath(); ctx.moveTo(X2px(xa), Y2px(a.m * xa + a.q)); ctx.lineTo(X2px(xb), Y2px(a.m * xb + a.q)); ctx.stroke();
+        const lxp = a.side < 0 ? view.x0 + (view.x1 - view.x0) * 0.03 : view.x1 - (view.x1 - view.x0) * 0.2;
+        ctx.fillText(a.eq, X2px(lxp), Y2px(a.m * lxp + a.q) - 7);
+      }
+      ctx.restore();
+    }
+    const brk = [...res.vertAs, ...res.excl];
+    if ($('t-d2').checked) plot(res.F2, css('--d2'), 1.6, [2, 4], [...brk, ...res.nonDiff.map(n => n.x)]);
+    if ($('t-d1').checked) plot(res.F1, css('--d1'), 1.8, [7, 5], [...brk, ...res.nonDiff.map(n => n.x)]);
+    plot(res.F, css('--ink'), 2.6, [], brk);
+
+    if ($('t-pt').checked) {
+      const ink = css('--ink'), sheet = css('--sheet');
+      const dot = (x, y, fill, stroke, r = 4.5) => {
+        if (x < view.x0 || x > view.x1 || y < view.y0 || y > view.y1) return;
+        ctx.beginPath(); ctx.arc(X2px(x), Y2px(y), r, 0, Math.PI * 2);
+        ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
+      };
+      const tag = (x, y, t, up) => {
+        if (x < view.x0 || x > view.x1 || y < view.y0 || y > view.y1) return;
+        ctx.font = '600 12px ' + css('--font-ui'); ctx.fillStyle = red; ctx.textAlign = 'center';
+        ctx.fillText(t, X2px(x), Y2px(y) + (up ? -10 : 19)); ctx.textAlign = 'left';
+      };
+      res.zeros.forEach(z => dot(z, 0, sheet, ink, 4));
+      if (res.yInt) dot(0, res.yInt.y, sheet, ink, 4);
+      res.discont.filter(d => d.kind === 3).forEach(d => dot(d.x, d.value, sheet, red, 4.5));
+      res.extrema.forEach(e => { dot(e.x, e.y, red, red); tag(e.x, e.y, e.type === 'max' ? 'M' : 'm', e.type === 'max'); });
+      res.flex.forEach(e => { dot(e.x, e.y, sheet, red, 4); tag(e.x, e.y, 'F', true); });
+    }
+    if (hover) {
+      const y = res.F(hover);
+      if (isFinite(y)) { ctx.beginPath(); ctx.arc(X2px(hover), Y2px(y), 3.5, 0, 7); ctx.fillStyle = css('--ink'); ctx.fill(); }
+    }
+  }
+  const piStep = () => {
+    const span = view.x1 - view.x0;
+    return span < 8 ? Math.PI / 4 : span < 20 ? Math.PI / 2 : span < 40 ? Math.PI : 2 * Math.PI;
+  };
+
+  // interazione
+  const pointers = new Map(); let lastPinch = null, hover = null;
+  const zoomAt = (px, py, k) => {
+    const x = px2X(px), y = px2Y(py);
+    view = { x0: x + (view.x0 - x) * k, x1: x + (view.x1 - x) * k, y0: y + (view.y0 - y) * k, y1: y + (view.y1 - y) * k };
+    draw();
+  };
+  cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(e.deltaY * 0.0015)); }, { passive: false });
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); lastPinch = null; });
+  cv.addEventListener('pointermove', e => {
+    const r = cv.getBoundingClientRect();
+    if (pointers.has(e.pointerId)) {
+      const prev = pointers.get(e.pointerId); const cur = { x: e.clientX, y: e.clientY };
+      if (pointers.size === 1) {
+        const dx = (cur.x - prev.x) / Wpx * (view.x1 - view.x0), dy = (cur.y - prev.y) / Hpx * (view.y1 - view.y0);
+        view.x0 -= dx; view.x1 -= dx; view.y0 += dy; view.y1 += dy; draw();
+      } else if (pointers.size === 2) {
+        pointers.set(e.pointerId, cur);
+        const [a, b] = [...pointers.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (lastPinch) zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, lastPinch / d);
+        lastPinch = d; return;
+      }
+      pointers.set(e.pointerId, cur);
+    } else if (e.pointerType === 'mouse' && res) {
+      hover = px2X(e.clientX - r.left);
+      const y = res.F(hover);
+      $('ro').textContent = `x = ${fmtTick(+hover.toFixed(3))}   f(x) = ${isFinite(y) ? fmtTick(+y.toPrecision(5)) : 'non definita'}`;
+      draw();
+    }
+  });
+  const up = e => { pointers.delete(e.pointerId); lastPinch = null; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('pointerleave', () => { if (hover !== null) { hover = null; draw(); } });
+  $('zin').addEventListener('click', () => zoomAt(Wpx / 2, Hpx / 2, 0.7));
+  $('zout').addEventListener('click', () => zoomAt(Wpx / 2, Hpx / 2, 1 / 0.7));
+  $('zfit').addEventListener('click', fitView);
+  ['t-d1', 't-d2', 't-as', 't-pt'].forEach(id => $(id).addEventListener('change', draw));
+  new ResizeObserver(resize).observe(cv);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  function run() {
+    const src = inp.value;
+    try {
+      const r = Studio.analyze(src);
+      res = r; $('err').hidden = true;
+      render(r); fitView();
+      try { localStorage.setItem('studio-fx', src); } catch (e) {}
+    } catch (e) {
+      $('err').hidden = false;
+      $('err').textContent = e instanceof Studio.UserError ? e.message : 'Non riesco a studiare questa funzione: controlla la scrittura.';
+      if (!(e instanceof Studio.UserError)) console.error(e);
+    }
+  }
+  try { const s = localStorage.getItem('studio-fx'); if (s) inp.value = s; } catch (e) {}
+  resize();
+  run();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

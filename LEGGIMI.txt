@@ -1,0 +1,23 @@
+STUDIO DI FUNZIONE — installazione su iPad (web app)
+
+PUBBLICARE (una volta sola, gratis, con GitHub Pages)
+1. Crea un account su github.com e un nuovo repository pubblico, per esempio "studio-funzione".
+2. Nel repository scegli "Add file" > "Upload files" e trascina TUTTI i file di questa cartella
+   (index.html, manifest.webmanifest, sw.js e le tre immagini .png). Conferma con "Commit changes".
+3. Vai in Settings > Pages. In "Branch" scegli "main" e la cartella "/ (root)", poi Save.
+4. Dopo un minuto circa la pagina mostra l'indirizzo, del tipo:
+   https://TUONOME.github.io/studio-funzione/
+
+INSTALLARE SULL'IPAD
+1. Apri quell'indirizzo con Safari (deve essere Safari).
+2. Tocca Condividi (il quadrato con la freccia) > "Aggiungi alla schermata Home" > Aggiungi.
+3. Apri l'app dall'icona almeno una volta con la connessione attiva: da quel momento funziona anche offline.
+
+AGGIORNARE
+Se modifichi i file, cambia il numero in sw.js (riga CACHE = 'studio-funzione-v1' -> 'v2')
+prima di ricaricarli, altrimenti l'iPad continua a mostrare la versione vecchia.
+
+NOTE
+- Gli studenti usano lo stesso indirizzo: nessun account, nessun dato raccolto.
+- Il font matematico (STIX Two) viene scaricato la prima volta; senza quello l'app usa un font di sistema.
+- Per aprire index.html direttamente dai File dell'iPad non basta: serve l'indirizzo web.
