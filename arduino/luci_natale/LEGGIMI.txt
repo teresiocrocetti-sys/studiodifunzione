@@ -1,0 +1,36 @@
+LUCI DI NATALE — Arduino + striscia LED WS2812B
+
+MATERIALE
+- Arduino Uno o Nano
+- Striscia o catena di LED WS2812B (dette anche "NeoPixel"), 5 V
+- Alimentatore 5 V adeguato: circa 60 mA per LED a piena luce bianca (50 LED -> 3 A)
+- Resistenza da 330 ohm, condensatore elettrolitico da 1000 uF (6,3 V o più)
+- Un pulsante
+
+COLLEGAMENTI
+  Alimentatore +5V  -> +5V della striscia  (e pin 5V di Arduino, se non è collegato all'USB)
+  Alimentatore GND  -> GND della striscia  -> GND di Arduino   (le masse vanno SEMPRE unite)
+  Pin 6 di Arduino  -> resistenza 330 ohm  -> ingresso dati (DIN) della striscia
+  Condensatore 1000 uF tra +5V e GND, vicino alla striscia (il lato "-" sul GND)
+  Pulsante tra pin 2 e GND (nessuna resistenza: si usa quella interna)
+
+ATTENZIONE: non alimentare più di pochi LED dal pin 5V di Arduino o dall'USB.
+La striscia va alimentata dall'alimentatore esterno.
+
+CARICARE IL PROGRAMMA
+1. Apri luci_natale.ino con l'IDE Arduino.
+2. Strumenti > Gestisci librerie: cerca "FastLED" e installala.
+3. In cima al file imposta NUM_LED (numero dei tuoi LED) e MILLIAMPERE (corrente dell'alimentatore).
+4. Scegli la scheda e la porta, poi Carica.
+
+USO
+- Pressione breve: effetto successivo
+  (candele, scintillio, rosso/verde, bastoncino di zucchero, arcobaleno, neve)
+- Pressione lunga (1 secondo): spegni / riaccendi
+- L'ultimo effetto scelto viene ricordato anche dopo aver staccato la corrente.
+
+SE QUALCOSA NON VA
+- Colori scambiati (rosso al posto del verde): cambia ORDINE_COLORI da GRB a RGB.
+- Si accende solo il primo LED o niente: controlla la freccia sulla striscia (si entra da DIN)
+  e che il GND di Arduino sia collegato al GND dell'alimentatore.
+- Luce troppo forte o troppo debole: cambia LUMINOSITA (0-255).
