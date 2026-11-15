@@ -1,0 +1,47 @@
+# Titoli FTSE MIB in formato Yahoo Finance (suffisso .MI), uno per riga.
+# ATTENZIONE: la composizione dell'indice cambia ogni trimestre e alcune società
+# possono essere state acquisite o tolte dal listino (es. Mediobanca, Pop. Sondrio,
+# Iveco). Elenco compilato a memoria, da verificare su borsaitalia.it.
+# I ticker non più validi vengono semplicemente segnalati come "dati non disponibili".
+# Si possono aggiungere anche titoli fuori dall'indice (es. mid cap).
+A2A.MI
+AMP.MI      # Amplifon
+AZM.MI      # Azimut
+BAMI.MI     # Banco BPM
+BC.MI       # Brunello Cucinelli
+BGN.MI      # Banca Generali
+BMED.MI     # Banca Mediolanum
+BMPS.MI     # Monte dei Paschi
+BPE.MI      # BPER
+BZU.MI      # Buzzi
+CPR.MI      # Campari
+DIA.MI      # DiaSorin
+ENEL.MI
+ENI.MI
+FBK.MI      # Fineco
+G.MI        # Generali
+HER.MI      # Hera
+IG.MI       # Italgas
+INW.MI      # Inwit
+IP.MI       # Interpump
+ISP.MI      # Intesa Sanpaolo
+IVG.MI      # Iveco
+LDO.MI      # Leonardo
+LTMC.MI     # Lottomatica
+MB.MI       # Mediobanca
+MONC.MI     # Moncler
+NEXI.MI
+PIRC.MI     # Pirelli
+PRY.MI      # Prysmian
+PST.MI      # Poste Italiane
+RACE.MI     # Ferrari
+REC.MI      # Recordati
+SPM.MI      # Saipem
+SRG.MI      # Snam
+STLAM.MI    # Stellantis
+STMMI.MI    # STMicroelectronics
+TEN.MI      # Tenaris
+TIT.MI      # Telecom Italia
+TRN.MI      # Terna
+UCG.MI      # UniCredit
+UNI.MI      # Unipol
