@@ -14,20 +14,14 @@
   #crt{position:absolute;inset:0;pointer-events:none;
     background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,rgba(0,0,0,.22) 3px),
                radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.45) 100%)}
-  #touch{display:none;width:100%;max-width:560px;justify-content:space-between;padding:0 16px;box-sizing:border-box}
-  #touch div{display:flex;gap:14px}
-  #touch button{width:68px;height:68px;border-radius:50%;border:2px solid #7dffb2;background:rgba(125,255,178,.12);
-    color:#7dffb2;font:10px "Press Start 2P",monospace;touch-action:none}
-  #touch button:active{background:rgba(125,255,178,.4)}
-  @media (pointer:coarse){#touch{display:flex}}
+  body{-webkit-touch-callout:none}
+  #stick{position:fixed;width:96px;height:96px;margin:-50px 0 0 -50px;border:2px solid rgba(125,255,178,.6);border-radius:50%;display:none;pointer-events:none;z-index:5}
+  #knob{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:rgba(125,255,178,.45)}
 </style>
 </head>
 <body>
 <div id="wrap"><canvas id="c" width="512" height="448"></canvas><div id="crt"></div></div>
-<div id="touch">
-  <div><button data-k="left">◀</button><button data-k="right">▶</button></div>
-  <div><button data-k="fire">BOLLA</button><button data-k="jump">SALTO</button></div>
-</div>
+<div id="stick"><div id="knob"></div></div>
 <script>
 "use strict";
 // ---------- costanti ----------
@@ -36,10 +30,10 @@ const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 ctx.imageSmoothingEnabled=false;
 
 // ---------- sprite pixel-art ----------
-function sprite(rows,pal){
-  const c=document.createElement('canvas');c.width=rows[0].length;c.height=rows.length;
+function sprite(rows,pal,s=2){
+  const c=document.createElement('canvas');c.width=rows[0].length*s;c.height=rows.length*s;
   const g=c.getContext('2d');
-  rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(pal[ch]){g.fillStyle=pal[ch];g.fillRect(x,y,1,1);}}));
+  rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(pal[ch]){g.fillStyle=pal[ch];g.fillRect(x*s,y*s,s,s);}}));
   return c;
 }
 function flip(src){
@@ -146,12 +140,38 @@ const KM={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'
   KeyX:'fire',KeyJ:'fire',ControlLeft:'fire',ControlRight:'fire',Enter:'start',KeyP:'pause',Escape:'pause',KeyM:'mute'};
 addEventListener('keydown',e=>{const k=KM[e.code];if(!k)return;e.preventDefault();audio();if(!e.repeat)pressed[k]=true;keys[k]=true;});
 addEventListener('keyup',e=>{const k=KM[e.code];if(k)keys[k]=false;});
-document.querySelectorAll('#touch button').forEach(b=>{
-  const k=b.dataset.k;
-  b.addEventListener('pointerdown',e=>{e.preventDefault();audio();keys[k]=true;pressed[k]=true;b.setPointerCapture(e.pointerId);});
-  for(const ev of['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,()=>keys[k]=false);
-});
-cv.addEventListener('pointerdown',()=>{audio();pressed.start=true;});
+// touch: metà sinistra = joystick a scomparsa (trascina per muovere, su per saltare), metà destra = tocca per la bolla
+const isTouch=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
+const stickEl=document.getElementById('stick'),knob=document.getElementById('knob');
+let tMove=null,tFire=null;
+document.addEventListener('pointerdown',e=>{
+  audio();
+  if(e.pointerType==='mouse'){if(e.target===cv)pressed.start=true;return;}
+  e.preventDefault();
+  if(state==='title'||state==='over'){pressed.start=true;return;}
+  if(e.clientX<innerWidth/2){
+    if(tMove)return;
+    tMove={id:e.pointerId,x0:e.clientX,y0:e.clientY,up:false};
+    stickEl.style.left=e.clientX+'px';stickEl.style.top=e.clientY+'px';stickEl.style.display='block';knob.style.transform='';
+  }else{tFire=e.pointerId;pressed.fire=true;keys.fire=true;}
+},{passive:false});
+document.addEventListener('pointermove',e=>{
+  if(!tMove||e.pointerId!==tMove.id)return;
+  e.preventDefault();
+  let dx=e.clientX-tMove.x0,dy=e.clientY-tMove.y0;
+  if(dx>40){tMove.x0=e.clientX-40;dx=40;}else if(dx<-40){tMove.x0=e.clientX+40;dx=-40;}
+  if(dy>30){tMove.y0=e.clientY-30;dy=30;}
+  stickEl.style.left=tMove.x0+'px';stickEl.style.top=tMove.y0+'px';
+  keys.left=dx<-12;keys.right=dx>12;
+  if(dy<-30){if(!tMove.up){tMove.up=true;pressed.jump=true;}keys.jump=true;}
+  else if(dy>-18){tMove.up=false;keys.jump=false;}
+  knob.style.transform=`translate(${dx}px,${Math.max(-40,dy)}px)`;
+},{passive:false});
+function endTouch(e){
+  if(tMove&&e.pointerId===tMove.id){tMove=null;keys.left=keys.right=keys.jump=false;stickEl.style.display='none';}
+  if(e.pointerId===tFire){tFire=null;keys.fire=false;}
+}
+for(const ev of['pointerup','pointercancel'])document.addEventListener(ev,endTouch);
 
 // ---------- stato ----------
 let state='title',score=0,hi=0,lives=3,round=0,speedMul=1,nextLife=30000;
@@ -165,11 +185,11 @@ function loadRound(n){
   round=n;lvl=LEVELS[n%LEVELS.length];speedMul=1+.2*Math.floor(n/LEVELS.length);
   map=buildMap(lvl);renderMap();
   P=newPlayer();
-  enemies=lvl.e.map(([c,r,t])=>({x:c*T,y:r*T-12,w:12,h:12,vy:0,dir:c<16?1:-1,t,state:'walk',angry:false,
+  enemies=lvl.e.map(([c,r,t])=>({x:c*T,y:r*T-24,w:24,h:24,vy:0,dir:c<16?1:-1,t,state:'walk',angry:false,
     jt:40+Math.random()*80,onGround:false,rot:0,vx:0,dt:0}));
   bubbles=[];fruits=[];parts=[];texts=[];ghost=null;levelTime=0;state='intro';timer=120;
 }
-function newPlayer(){return{x:3*T,y:MAPH-T-13,w:12,h:13,vy:0,dir:1,onGround:false,inv:120,dead:0,cd:0,walk:0};}
+function newPlayer(){return{x:3*T,y:MAPH-T-26,w:24,h:26,vy:0,dir:1,onGround:false,inv:120,dead:0,cd:0,walk:0};}
 function renderMap(){
   mapC=document.createElement('canvas');mapC.width=W;mapC.height=MAPH;
   const g=mapC.getContext('2d'),[c1,c2]=lvl.c;
@@ -202,8 +222,9 @@ function moveY(e){
 const ov=(a,b,s=0)=>a.x+s<b.x+b.w-s&&a.x+a.w-s>b.x+s&&a.y+s<b.y+b.h-s&&a.y+a.h-s>b.y+s;
 function touchC(p,b){
   const cx=Math.max(p.x,Math.min(b.x,p.x+p.w)),cy=Math.max(p.y,Math.min(b.y,p.y+p.h));
-  return(cx-b.x)**2+(cy-b.y)**2<64;
+  return(cx-b.x)**2+(cy-b.y)**2<R*R;
 }
+const R=14; // raggio bolla
 
 // ---------- logica ----------
 function addScore(pts,x,y){
@@ -219,7 +240,7 @@ function killPlayer(){
   P.dead=110;lives--;snd(500,60,.9,'sawtooth',.08);
 }
 function shoot(){
-  bubbles.push({x:P.x+P.w/2+P.dir*6,y:P.y+7,vx:P.dir*4.5,state:'shot',t:0,life:0,enemy:null,chain:0,pd:0,dead:false});
+  bubbles.push({x:P.x+P.w/2+P.dir*10,y:P.y+13,vx:P.dir*5,state:'shot',t:0,life:0,enemy:null,chain:0,pd:0,dead:false});
   snd(700,1300,.08,'triangle',.08);
 }
 function popBubble(b){
@@ -228,11 +249,11 @@ function popBubble(b){
     const e=b.enemy;e.state='dying';e.vx=(Math.random()<.5?-1:1)*(1.5+Math.random()*1.5);e.vy=-5;e.dt=0;
     addScore(1000*2**Math.min(b.chain,3),b.x,b.y);snd(900,200,.25,'square',.08);
   }else{addScore(10);snd(500,300,.06,'square',.05);}
-  for(const o of bubbles)if(!o.dead&&!o.pd&&o.state==='float'&&Math.hypot(o.x-b.x,o.y-b.y)<22){o.pd=5;o.chain=b.chain+1;}
+  for(const o of bubbles)if(!o.dead&&!o.pd&&o.state==='float'&&Math.hypot(o.x-b.x,o.y-b.y)<2*R+6){o.pd=5;o.chain=b.chain+1;}
 }
 function release(b){
   b.dead=true;const e=b.enemy;burst(b.x,b.y,'#ff5a5a');
-  e.state='walk';e.angry=true;e.x=Math.max(2*T,Math.min(30*T-e.w,b.x-6));e.y=b.y-6;e.vy=0;
+  e.state='walk';e.angry=true;e.x=Math.max(2*T,Math.min(30*T-e.w,b.x-12));e.y=b.y-12;e.vy=0;
 }
 
 function updatePlayer(){
@@ -262,27 +283,27 @@ function updateBubbles(){
     if(b.pd>0){if(--b.pd===0)popBubble(b);continue;}
     if(b.state==='shot'){
       b.x+=b.vx;
-      if(b.x<2*T+8){b.x=2*T+8;b.state='float';}
-      if(b.x>30*T-8){b.x=30*T-8;b.state='float';}
+      if(b.x<2*T+R){b.x=2*T+R;b.state='float';}
+      if(b.x>30*T-R){b.x=30*T-R;b.state='float';}
       if(b.t>20)b.state='float';
-      for(const e of enemies)if(e.state==='walk'&&Math.abs(e.x+6-b.x)<12&&Math.abs(e.y+6-b.y)<12){
+      for(const e of enemies)if(e.state==='walk'&&Math.abs(e.x+12-b.x)<18&&Math.abs(e.y+12-b.y)<18){
         b.enemy=e;e.state='trapped';b.state='float';b.life=0;snd(300,900,.15,'triangle',.08);break;
       }
     }else{
       b.life++;
-      const top=T+9;
+      const top=T+R+1;
       if(b.y>top)b.y=Math.max(top,b.y-(b.enemy?.45:.6));
-      if(b.y<top+24){const dx=256-b.x;b.x+=Math.sign(dx)*Math.min(Math.abs(dx),.35);}
+      if(b.y<top+30){const dx=256-b.x;b.x+=Math.sign(dx)*Math.min(Math.abs(dx),.35);}
       b.x+=Math.sin((b.t+b.x)*.05)*.15;
-      b.x=Math.max(2*T+8,Math.min(30*T-8,b.x));
-      if(b.enemy){b.enemy.x=b.x-6;b.enemy.y=b.y-6;if(b.life>480)release(b);}
+      b.x=Math.max(2*T+R,Math.min(30*T-R,b.x));
+      if(b.enemy){b.enemy.x=b.x-12;b.enemy.y=b.y-12;if(b.life>480)release(b);}
       else if(b.life>600){b.dead=true;burst(b.x,b.y,'#9fffc8',4);}
     }
   }
   const fl=bubbles.filter(b=>!b.dead&&b.state==='float');
   for(let i=0;i<fl.length;i++)for(let j=i+1;j<fl.length;j++){
     const a=fl[i],b=fl[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
-    if(d<16&&d>0){const o=(16-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;}
+    if(d<2*R&&d>0){const o=(2*R-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;}
   }
   if(!P.dead)for(const b of bubbles){
     if(b.dead||b.pd||b.state!=='float'||!touchC(P,b))continue;
@@ -304,7 +325,7 @@ function updateEnemies(){
         else if(Math.random()<.5)e.dir=P.x<e.x?-1:1;
         e.jt=(e.t===1?40:70)+Math.random()*80*(e.angry?.5:1);
       }
-      if(!P.dead&&ov(e,P,2))killPlayer();
+      if(!P.dead&&ov(e,P,4))killPlayer();
     }else if(e.state==='dying'){
       e.dt++;e.rot+=.3;
       if(moveX(e,e.vx))e.vx*=-1;
@@ -316,20 +337,20 @@ function updateEnemies(){
   enemies=enemies.filter(e=>e.state!=='gone');
 }
 const FRUIT_PTS=[200,500,1000,2000];
-function spawnFruit(x,y){fruits.push({x,y:y-12,w:12,h:12,vy:0,k:Math.random()*4|0,life:0,onGround:false});}
+function spawnFruit(x,y){fruits.push({x,y:y-20,w:20,h:20,vy:0,k:Math.random()*4|0,life:0,onGround:false});}
 function updateFruits(){
   for(const f of fruits){
     f.life++;f.vy=Math.min(f.vy+.3,3);moveY(f);
-    if(!P.dead&&ov(f,P)){f.got=true;addScore(FRUIT_PTS[f.k],f.x+6,f.y);snd(800,1600,.15,'square',.06);}
+    if(!P.dead&&ov(f,P)){f.got=true;addScore(FRUIT_PTS[f.k],f.x+10,f.y);snd(800,1600,.15,'square',.06);}
   }
   fruits=fruits.filter(f=>!f.got&&f.life<600);
 }
 function updateGhost(){
-  if(levelTime===60*45&&!ghost){ghost={x:256,y:-12,w:12,h:12};snd(200,100,.6,'sawtooth',.06);}
+  if(levelTime===60*45&&!ghost){ghost={x:256,y:-24,w:24,h:24};snd(200,100,.6,'sawtooth',.06);}
   if(!ghost||P.dead)return;
   const dx=P.x-ghost.x,dy=P.y-ghost.y,d=Math.hypot(dx,dy)||1,s=.9*speedMul;
   ghost.x+=dx/d*s;ghost.y+=dy/d*s;
-  if(ov(ghost,P,2))killPlayer();
+  if(ov(ghost,P,4))killPlayer();
 }
 
 function update(){
@@ -370,7 +391,8 @@ function drawSpr(img,x,y,rot=0){
 function enemySpr(e){return SE[e.t][e.angry?'a':'n'][e.dir<0?'l':'r'];}
 function drawFruit(f){
   if(f.life>480&&frameN%8<4)return;
-  const x=f.x+6,y=f.y+OY+6;
+  ctx.save();ctx.translate(f.x+10,f.y+OY+10);ctx.scale(1.6,1.6);
+  const x=0,y=0;
   if(f.k===0){ctx.fillStyle='#3a3';ctx.fillRect(x-1,y-7,2,5);ctx.fillStyle='#e22';
     ctx.beginPath();ctx.arc(x-3,y+2,4,0,7);ctx.arc(x+3,y+2,4,0,7);ctx.fill();}
   else if(f.k===1){ctx.fillStyle='#ffe23f';ctx.beginPath();ctx.ellipse(x,y,6,4,0,0,7);ctx.fill();
@@ -379,15 +401,16 @@ function drawFruit(f){
     ctx.fillStyle='#ff4f6a';ctx.beginPath();ctx.arc(x,y-2,5,0,Math.PI);ctx.fill();}
   else{ctx.fillStyle='#5ff';ctx.beginPath();ctx.moveTo(x,y-6);ctx.lineTo(x+6,y);ctx.lineTo(x,y+6);ctx.lineTo(x-6,y);ctx.fill();
     ctx.fillStyle='#fff';ctx.fillRect(x-2,y-3,2,2);}
+  ctx.restore();
 }
 function drawBubble(b){
   let col='#7dffb2';
-  if(b.enemy){col=b.life>400?(frameN%10<5?'#ff5a5a':'#ffd23f'):b.life>280?'#ffd23f':'#7dffb2';drawSpr(enemySpr(b.enemy),b.x-6,b.y-6);}
+  if(b.enemy){col=b.life>400?(frameN%10<5?'#ff5a5a':'#ffd23f'):b.life>280?'#ffd23f':'#7dffb2';drawSpr(enemySpr(b.enemy),b.x-12,b.y-12);}
   else if(b.life>520&&frameN%8<4)return;
   const y=b.y+OY;
-  ctx.globalAlpha=.22;ctx.fillStyle=col;ctx.beginPath();ctx.arc(b.x,y,8,0,7);ctx.fill();
-  ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(b.x,y,8,0,7);ctx.stroke();
-  ctx.fillStyle='#fff';ctx.fillRect(b.x-4,y-5,2,2);ctx.fillRect(b.x-5,y-3,1,2);
+  ctx.globalAlpha=.22;ctx.fillStyle=col;ctx.beginPath();ctx.arc(b.x,y,R,0,7);ctx.fill();
+  ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.arc(b.x,y,R,0,7);ctx.stroke();
+  ctx.fillStyle='#fff';ctx.fillRect(b.x-7,y-9,3,3);ctx.fillRect(b.x-9,y-6,2,3);
 }
 function drawHUD(){
   txt('1UP',24,4,'#ff5a8a');txt(pad(score),8,16,'#fff');
@@ -403,13 +426,20 @@ function drawTitle(){
   }
   const name='BOLLAMANIA',cols=['#ff5a8a','#ffd23f','#7dffb2','#4fa8ff','#b76bff'];
   for(let i=0;i<name.length;i++)txt(name[i],256-name.length*14+i*28+4,110+Math.sin(frameN*.08+i*.6)*6,cols[i%5],24);
-  ctx.drawImage(SP.r,226,170,36,39);ctx.drawImage(SE[0].n.l,276,176,36,36);
+  ctx.drawImage(SP.r,206,164,48,52);ctx.drawImage(SE[0].n.l,266,168,48,48);
   txt('INTRAPPOLA I MOSTRI NELLE BOLLE',256,236,'#fff',8,'center');
   txt('E FALLE SCOPPIARE!',256,252,'#fff',8,'center');
-  txt('FRECCE / A D  MUOVI',256,290,'#9cc8ff',8,'center');
-  txt('Z / SPAZIO  SALTA',256,306,'#9cc8ff',8,'center');
-  txt('X / J  SPARA BOLLA',256,322,'#9cc8ff',8,'center');
-  txt('P PAUSA   M AUDIO',256,338,'#9cc8ff',8,'center');
+  if(isTouch){
+    txt('DITO A SINISTRA:',256,290,'#ffd23f',8,'center');
+    txt('TRASCINA = MUOVI   SU = SALTA',256,306,'#9cc8ff',8,'center');
+    txt('DITO A DESTRA:',256,326,'#ffd23f',8,'center');
+    txt('TOCCA = SPARA BOLLA',256,342,'#9cc8ff',8,'center');
+  }else{
+    txt('FRECCE / A D  MUOVI',256,290,'#9cc8ff',8,'center');
+    txt('Z / SPAZIO  SALTA',256,306,'#9cc8ff',8,'center');
+    txt('X / J  SPARA BOLLA',256,322,'#9cc8ff',8,'center');
+    txt('P PAUSA   M AUDIO',256,338,'#9cc8ff',8,'center');
+  }
   if(frameN%60<40)txt('PREMI INVIO O TOCCA',256,376,'#ffd23f',8,'center');
   txt('RECORD '+hi,256,410,'#ff5a8a',8,'center');
 }
@@ -424,14 +454,15 @@ function render(){
   }
   bubbles.forEach(drawBubble);
   if(P.dead)drawSpr(SP[P.dir<0?'l':'r'],P.x,P.y,P.dead*.25);
-  else if(!(P.inv>0&&frameN%6<3))drawSpr(SP[P.dir<0?'l':'r'],P.x,P.y-((P.walk>>3)&1));
+  else if(!(P.inv>0&&frameN%6<3))drawSpr(SP[P.dir<0?'l':'r'],P.x,P.y-((P.walk>>3)&1)*2);
   if(ghost)drawSpr(SG,ghost.x,ghost.y);
   for(const p of parts){ctx.fillStyle=p.col;ctx.fillRect(p.x-1,p.y+OY-1,2,2);}
   for(const t of texts)
     if(t.big){if(frameN%16<11)txt(t.s,t.x,t.y+OY,'#ff5a5a',16,'center');}
     else txt(t.s,t.x,t.y+OY,'#fff',8,'center');
   drawHUD();
-  if(state==='intro'){txt('ROUND '+(round+1),256,190,'#ffd23f',16,'center');txt('PRONTI!',256,216,'#fff',8,'center');}
+  if(state==='intro'){txt('ROUND '+(round+1),256,190,'#ffd23f',16,'center');txt('PRONTI!',256,216,'#fff',8,'center');
+    if(isTouch&&round===0){txt('SINISTRA: TRASCINA E SU',256,250,'#9cc8ff',8,'center');txt('DESTRA: TOCCA PER LA BOLLA',256,266,'#9cc8ff',8,'center');}}
   if(state==='clear'&&timer<140)txt('ROUND COMPLETATO!',256,200,'#7dffb2',16,'center');
   if(state==='over'){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,0,W,H);
     txt('GAME OVER',256,190,'#ff5a5a',24,'center');txt('PUNTI '+score,256,232,'#fff',8,'center');
@@ -447,8 +478,7 @@ function frame(t){
   render();requestAnimationFrame(frame);
 }
 function fit(){
-  const th=document.getElementById('touch').offsetHeight||0;
-  let s=Math.min(innerWidth/W,(innerHeight-th-16)/H);
+  let s=Math.min(innerWidth/W,(innerHeight-8)/H);
   if(s>=1)s=Math.floor(s*4)/4;
   cv.style.width=W*s+'px';cv.style.height=H*s+'px';
 }
