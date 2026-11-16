@@ -1,5 +1,5 @@
 // Cambia il numero di versione a ogni modifica del gioco, così l'iPad scarica la nuova versione.
-const CACHE = 'bollamania-v1';
+const CACHE = 'bollamania-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
